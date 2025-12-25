@@ -66,7 +66,7 @@ class RegimeAnalyzer:
         if data.source == "failed":
              return ScoredMetric(
                 metric_name=name, score=0.0, raw_value=0.0,
-                confidence="LOW", reason="source_failed"
+                confidence="LOW"
             )
 
         t = self.thresholds.get(threshold_key)
@@ -75,7 +75,7 @@ class RegimeAnalyzer:
         if not t or not strategy:
             return ScoredMetric(
                 metric_name=name, score=0.0, raw_value=data.value,
-                confidence="LOW", reason="missing_config"
+                confidence="LOW"
             )
 
         weight = t.get('weight', 1.0)

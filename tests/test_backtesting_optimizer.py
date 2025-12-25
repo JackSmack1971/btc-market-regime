@@ -10,7 +10,7 @@ def test_optimizer_insufficient_data():
 def test_optimizer_basic_optimization():
     # Mock history and price data
     history = [
-        {"total_score": float(i % 5 - 2), "timestamp": "2023-01-01"} 
+        {"score": float(i % 5 - 2), "timestamp": "2023-01-01"} 
         for i in range(10)
     ]
     price_df = pd.DataFrame({
