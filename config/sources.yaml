@@ -1,0 +1,24 @@
+sources:
+  fear_greed_index:
+    primary: "https://api.alternative.me/fng/"
+    backup: "volatility_calc"
+  hash_rate:
+    primary: "https://api.blockchain.info/charts/hash-rate"
+    backup: "https://mempool.space/api/v1/difficulty-adjustment"
+  exchange_net_flows:
+    primary: "https://api.cryptoquant.com/v1/bitcoin/exchange-flows/netflow"
+    backup: "on_chain_manual"
+  active_addresses:
+    primary: "https://api.blockchain.info/charts/n-unique-addresses"
+    backup: "https://api.blockchair.com/bitcoin/stats"
+  perpetual_funding_rates:
+    primary: "https://fapi.binance.com/fapi/v1/fundingRate"
+    backup: "https://api.coingecko.com/api/v3/derivatives"
+  open_interest:
+    primary: "https://api.coingecko.com/api/v3/derivatives"
+    backup: "https://open-api-v4.coinglass.com/api/futures/open-interest"
+  mvrv_ratio:
+    primary: "https://community-api.coinmetrics.io/v4/timeseries/asset-metrics?metrics=CapMVRVCur&assets=btc"
+    backup: "https://api.blockchair.com/bitcoin/stats"
+  price_data:
+    primary: "https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=30"

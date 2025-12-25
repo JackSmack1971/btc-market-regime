@@ -1,0 +1,19 @@
+
+==================================================
+** [1mBITCOIN MARKET REGIME:[0m [93m[1mSIDEWAYS/TRANSITIONAL[0m **
+** [1mCONFIDENCE:[0m      HIGH **
+** [1mTOTAL SCORE:[0m     1.6 **
+==================================================
+
+              Indicator  Score          Raw   Conf
+       fear_greed_index   -1.0 2.300000e+01   HIGH
+              hash_rate    0.8 1.171326e+09   HIGH
+     exchange_net_flows    0.0 0.000000e+00 MEDIUM
+       active_addresses    0.0 5.139170e+05   HIGH
+perpetual_funding_rates    1.0 4.200000e-03 MEDIUM
+          open_interest    0.8 4.305591e+06   HIGH
+             mvrv_ratio    0.0 2.188900e+00   HIGH
+             price_data    0.0 5.616440e+01   HIGH
+
+--------------------------------------------------
+

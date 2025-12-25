@@ -1,0 +1,37 @@
+metrics:
+  fear_greed_index:
+    bull: 70
+    bear: 30
+    weight: 1.0
+  hash_rate:
+    bull_multiplier: 1.10  # MA30 + 10%
+    bear_multiplier: 0.90  # MA30 - 10%
+    weight: 0.8
+  exchange_net_flows:
+    bull: 0
+    bear: 0
+    weight: 0.9
+  active_addresses:
+    bull_multiplier: 1.05  # MA30 + 5%
+    bear_multiplier: 0.95  # MA30 - 5%
+    weight: 0.7
+  perpetual_funding_rates:
+    bull: 0.0001 # 0.01%
+    bear: -0.0001 # -0.01%
+    weight: 1.0
+  open_interest:
+    bull_mom: 0.05 # 5% MoM
+    bear_mom: -0.05
+    weight: 0.8
+  mvrv_ratio:
+    bull: 1.0
+    bear: 3.0
+    weight: 0.9
+  rsi:
+    bull: 30
+    bear: 70
+    weight: 0.6
+
+regime_thresholds:
+  bull: 3.0
+  bear: -3.0

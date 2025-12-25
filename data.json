@@ -1,0 +1,65 @@
+{
+  "engine_version": "1.0.0",
+  "timestamp": "2025-12-25T10:10:08.932196",
+  "total_score": 0.8,
+  "label": "SIDEWAYS/TRANSITIONAL",
+  "confidence": "HIGH",
+  "breakdown": [
+    {
+      "metric": "fear_greed_index",
+      "score": -1.0,
+      "raw_value": 23.0,
+      "confidence": "HIGH",
+      "is_fallback": false
+    },
+    {
+      "metric": "hash_rate",
+      "score": 0.8,
+      "raw_value": 1171325755.4979,
+      "confidence": "HIGH",
+      "is_fallback": false
+    },
+    {
+      "metric": "exchange_net_flows",
+      "score": 0.0,
+      "raw_value": 0.0,
+      "confidence": "MEDIUM",
+      "is_fallback": true
+    },
+    {
+      "metric": "active_addresses",
+      "score": 0.0,
+      "raw_value": 513917.0,
+      "confidence": "HIGH",
+      "is_fallback": false
+    },
+    {
+      "metric": "perpetual_funding_rates",
+      "score": 1.0,
+      "raw_value": 0.0042,
+      "confidence": "MEDIUM",
+      "is_fallback": true
+    },
+    {
+      "metric": "open_interest",
+      "score": 0.0,
+      "raw_value": 0.0,
+      "confidence": "MEDIUM",
+      "is_fallback": true
+    },
+    {
+      "metric": "mvrv_ratio",
+      "score": 0.0,
+      "raw_value": 2.1889,
+      "confidence": "HIGH",
+      "is_fallback": false
+    },
+    {
+      "metric": "price_data",
+      "score": 0.0,
+      "raw_value": 50.0,
+      "confidence": "MEDIUM",
+      "is_fallback": true
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{"sources": "config/sources.yaml", "thresholds": "config/thresholds.yaml", "event": "Initializing engine", "timestamp": "2025-12-25T15:09:59.886617Z"}
+{"metric": "fear_greed_index", "event": "Tier 1: Attempting primary", "timestamp": "2025-12-25T15:09:59.891476Z"}
+{"metric": "hash_rate", "event": "Tier 1: Attempting primary", "timestamp": "2025-12-25T15:10:01.353175Z"}
+{"metric": "exchange_net_flows", "event": "Tier 1: Attempting primary", "timestamp": "2025-12-25T15:10:02.829398Z"}
+{"url": "https://api.cryptoquant.com/v1/bitcoin/exchange-flows/netflow", "error": "401 Client Error: Unauthorized for url: https://api.cryptoquant.com/v1/bitcoin/exchange-flows/netflow", "event": "Network request failed", "timestamp": "2025-12-25T15:10:03.246610Z"}
+{"metric": "exchange_net_flows", "error": "401 Client Error: Unauthorized for url: https://api.cryptoquant.com/v1/bitcoin/exchange-flows/netflow", "event": "Primary failed", "timestamp": "2025-12-25T15:10:03.246669Z"}
+{"metric": "exchange_net_flows", "event": "Tier 2: Attempting backup", "timestamp": "2025-12-25T15:10:03.248260Z"}
+{"metric": "active_addresses", "event": "Tier 1: Attempting primary", "timestamp": "2025-12-25T15:10:03.248380Z"}
+{"metric": "perpetual_funding_rates", "event": "Tier 1: Attempting primary", "timestamp": "2025-12-25T15:10:04.682176Z"}
+{"url": "https://fapi.binance.com/fapi/v1/fundingRate", "error": "451 Client Error:  for url: https://fapi.binance.com/fapi/v1/fundingRate", "event": "Network request failed", "timestamp": "2025-12-25T15:10:05.060413Z"}
+{"metric": "perpetual_funding_rates", "error": "451 Client Error:  for url: https://fapi.binance.com/fapi/v1/fundingRate", "event": "Primary failed", "timestamp": "2025-12-25T15:10:05.060529Z"}
+{"metric": "perpetual_funding_rates", "event": "Tier 2: Attempting backup", "timestamp": "2025-12-25T15:10:05.062005Z"}
+{"metric": "open_interest", "event": "Tier 1: Attempting primary", "timestamp": "2025-12-25T15:10:06.776601Z"}
+{"url": "https://api.coingecko.com/api/v3/derivatives", "error": "429 Client Error: Too Many Requests for url: https://api.coingecko.com/api/v3/derivatives", "event": "Network request failed", "timestamp": "2025-12-25T15:10:07.124389Z"}
+{"metric": "open_interest", "error": "429 Client Error: Too Many Requests for url: https://api.coingecko.com/api/v3/derivatives", "event": "Primary failed", "timestamp": "2025-12-25T15:10:07.124466Z"}
+{"metric": "open_interest", "event": "Tier 2: Attempting backup", "timestamp": "2025-12-25T15:10:07.125922Z"}
+{"metric": "mvrv_ratio", "event": "Tier 1: Attempting primary", "timestamp": "2025-12-25T15:10:07.126026Z"}
+{"metric": "price_data", "event": "Tier 1: Attempting primary", "timestamp": "2025-12-25T15:10:08.551777Z"}
+{"url": "https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=30", "error": "429 Client Error: Too Many Requests for url: https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=30", "event": "Network request failed", "timestamp": "2025-12-25T15:10:08.930658Z"}
+{"metric": "price_data", "error": "429 Client Error: Too Many Requests for url: https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=30", "event": "Primary failed", "timestamp": "2025-12-25T15:10:08.930718Z"}
+{"metric": "price_data", "event": "Tier 2: Attempting backup", "timestamp": "2025-12-25T15:10:08.932088Z"}
