@@ -107,7 +107,7 @@ class MarketRegimeCLI:
             logger.info("Regime transition detected", prev=last_regime, current=current_regime)
             message = (
                 f"Market Regime changed from *{last_regime}* to *{current_regime}*.\n"
-                f"Current Score: {current_analysis.get('total_score')}\n"
+                f"Current Score: {current_analysis.get('score')}\n"
                 f"Confidence: {current_analysis.get('confidence')}"
             )
             await self.notifier.send(message, level=AlertLevel.ALERT)
@@ -143,7 +143,7 @@ class MarketRegimeCLI:
             print(f"\n{BOLD}Date       | Regime               | Score{RESET}")
             print("-" * 45)
             for day in history:
-                print(f"{day['timestamp']} | {day['label']:20} | {day['total_score']:.2f}")
+                print(f"{day['timestamp']} | {day['label']:20} | {day['score']:.2f}")
             print("-" * 45 + "\n")
 
     async def run_mtf(self, session: aiohttp.ClientSession):
@@ -176,7 +176,7 @@ class MarketRegimeCLI:
             res = results[horizon]
             label = res['label']
             color = GREEN if label == "BULL" else RED if "BEAR" in label else YELLOW
-            dash_data.append([horizon.upper(), f"{color}{BOLD}{label}{RESET}", res['total_score'], res['confidence']])
+            dash_data.append([horizon.upper(), f"{color}{BOLD}{label}{RESET}", res['score'], res['confidence']])
         
         df = pd.DataFrame(dash_data, columns=["Horizon", "Regime", "Score", "Conf"])
         print("\n" + df.to_string(index=False))
@@ -197,7 +197,7 @@ class MarketRegimeCLI:
                 row = {
                     "timestamp": entry["timestamp"],
                     "label": entry["label"],
-                    "score": entry["total_score"],
+                    "score": entry["score"],
                     "confidence": entry["confidence"]
                 }
                 for m in entry.get("breakdown", []):
@@ -218,14 +218,14 @@ class MarketRegimeCLI:
         print(f"\n{'='*50}")
         print(f"** {BOLD}BITCOIN MARKET REGIME:{RESET} {color}{BOLD}{label}{RESET} **")
         print(f"** {BOLD}CONFIDENCE:{RESET}      {analysis['confidence']} **")
-        print(f"** {BOLD}TOTAL SCORE:{RESET}     {analysis['total_score']} **")
+        print(f"** {BOLD}TOTAL SCORE:{RESET}     {analysis['score']} **")
         print(f"** {BOLD}TIMESTAMP:{RESET}       {analysis['timestamp']} **")
         print(f"{'='*50}\n")
         
         table_data = []
         has_fallbacks = False
         for m in analysis['breakdown']:
-            name = m['metric']
+            name = m['metric_name']
             if m.get('is_fallback'):
                 name += " [*]"
                 has_fallbacks = True

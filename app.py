@@ -113,7 +113,7 @@ def main():
                     msg = f"🔔 *BTC REGIME FLIP DETECTED*\n\n"
                     msg += f"**From**: `{prev}`\n"
                     msg += f"**To**: `{curr}`\n\n"
-                    msg += f"Score: {st.session_state.snapshot['total_score']:.2f}\n"
+                    msg += f"Score: {st.session_state.snapshot['score']:.2f}\n"
                     msg += f"Confidence: {st.session_state.snapshot['confidence']}"
                     alert_manager.send_message(msg)
                     st.toast(f"REGIME FLIP: {prev} -> {curr}", icon="🚨")
@@ -147,7 +147,7 @@ def main():
     
     render_historical_analysis(st.session_state.history, st.session_state.metrics_map)
     
-    render_forecast_section(st.session_state.history, st.session_state.snapshot['total_score'])
+    render_forecast_section(st.session_state.history, st.session_state.snapshot['score'])
 
     render_optimizer_section(st.session_state.history, st.session_state.metrics_map)
 

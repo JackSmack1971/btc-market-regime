@@ -212,7 +212,7 @@ def calculate_regime(scored_metrics: List[ScoredMetric]) -> Dict[str, Any]:
 
     breakdown = [
         {
-            "metric": m.metric_name,
+            "metric_name": m.metric_name,
             "score": round(m.score, 2),
             "raw_value": round(m.raw_value, 4),
             "confidence": m.confidence,
@@ -224,7 +224,7 @@ def calculate_regime(scored_metrics: List[ScoredMetric]) -> Dict[str, Any]:
     return {
         "engine_version": "1.0.0",
         "timestamp": datetime.now().isoformat(),
-        "total_score": round(total_score, 2),
+        "score": round(total_score, 2),
         "label": label,
         "confidence": overall_confidence,
         "breakdown": breakdown

@@ -9,7 +9,7 @@ from ..backtesting.optimizer import BacktestOptimizer
 def render_kpi_section(snapshot: Dict[str, Any]):
     """Renders the top KPI cards and score gauge."""
     label = snapshot['label']
-    score = snapshot['total_score']
+    score = snapshot['score']
     confidence = snapshot['confidence']
     
     label_class = "regime-bull" if label == "BULL" else "regime-bear" if label == "BEAR" else "regime-neutral"
@@ -30,7 +30,7 @@ def render_component_breakdown(breakdown: List[Dict[str, Any]]):
     """Renders the individual indicator breakdown table."""
     st.markdown("### COMPONENT BREAKDOWN")
     df = pd.DataFrame(breakdown)
-    st.dataframe(df[['metric', 'score', 'raw_value', 'confidence']], use_container_width=True)
+    st.dataframe(df[['metric_name', 'score', 'raw_value', 'confidence']], use_container_width=True)
 
 def render_historical_analysis(history: List[Dict[str, Any]], metrics_map: Dict[str, Any]):
     """Renders the historical regime chart with price overlay."""
@@ -102,7 +102,7 @@ def render_technical_logs(metrics_map: Dict[str, Any], snapshot: Dict[str, Any],
         
         with col2:
             st.markdown("### REASONING NARRATIVE")
-            score = snapshot['total_score']
+            score = snapshot['score']
             label = snapshot['label']
             
             narrative = f"The Bitcoin market is currently in a **{label}** regime. "

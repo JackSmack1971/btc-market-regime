@@ -9,6 +9,7 @@ class MetricData:
     value: float
     timestamp: datetime
     source: str
+    is_fallback: bool = False
 
 @dataclass
 class ScoredMetric:
