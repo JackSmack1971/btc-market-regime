@@ -8,3 +8,4 @@ streamlit==1.42.1
 plotly==6.0.2
 scikit-learn==1.6.1
 statsmodels==0.14.4
+aiohttp==3.11.11

@@ -1,0 +1,8 @@
+
+metrics:
+  fear_greed_index: {bull: 75, bear: 25, weight: 1.5}
+  mvrv_ratio: {bull: 1.2, bear: 3.5, weight: 2.0}
+  rsi: {bull: 30, bear: 70, weight: 1.0}
+  hash_rate: {bull_multiplier: 1.05, bear_multiplier: 0.95, weight: 1.2}
+  active_addresses: {bull_mom: 0.05, bear_mom: -0.05, weight: 1.0}
+        

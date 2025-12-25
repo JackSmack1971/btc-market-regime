@@ -6,7 +6,9 @@ from datetime import datetime
 from src.fetchers import FetcherFactory
 from src.analyzer import RegimeAnalyzer, calculate_regime, analyze_history, analyze_mtf
 from src.ui.layout import apply_custom_css, inject_google_fonts
+from src.ui.styles import inject_bloomberg_styles
 from src.ui.charts import plot_regime_history, plot_confluence_heatmap, plot_score_gauge
+from src.streaming import MarketDataStream
 from src.utils import logger, health_tracker, alert_manager
 from src.intelligence.forecaster import RegimeForecaster
 from src.intelligence.detector import AnomalyDetector
@@ -48,6 +50,7 @@ def play_regime_flip_audio():
 
 # UI Entry Point
 def main():
+    inject_bloomberg_styles()
     inject_google_fonts()
     apply_custom_css()
     
@@ -84,34 +87,56 @@ def main():
         else:
             st.info("No active sessions. Refresh to see system health.")
 
-    # Core Execution (Async Orchestration)
-    async def fetch_all_metrics():
-        async with aiohttp.ClientSession() as session:
-            tasks = []
-            for name, config in sources_config.items():
-                fetcher = FetcherFactory.create(name, config)
-                tasks.append(fetcher.fetch_history(session, days_hist))
-            
-            return await asyncio.gather(*tasks, return_exceptions=True)
-
+    # Producer-Consumer Data Stream (Cached Resource)
+    @st.cache_resource
+    def get_market_stream(_sources_config: dict, _days_hist: int):
+        """Singleton MarketDataStream instance (cached across reruns)."""
+        stream = MarketDataStream(_sources_config, _days_hist, refresh_interval=60)
+        stream.start()
+        logger.info("MarketDataStream cached and started")
+        return stream
+    
+    # Get or create cached stream
+    stream = get_market_stream(sources_config, days_hist)
+    
+    # Consumer: Read latest data from buffer
     if refresh or 'metrics_map' not in st.session_state:
-        with st.spinner("FETCHING GLOBAL MARKET METRICS (ASYNC)..."):
-            results = asyncio.run(fetch_all_metrics())
+        with st.spinner("FETCHING GLOBAL MARKET METRICS (STREAMING)..."):
+            latest_data = stream.get_latest()
             
-            metrics_map = {}
-            scored_snapshot = []
-            
-            # Map results back to metric names
-            names = list(sources_config.keys())
-            for i, result in enumerate(results):
-                name = names[i]
-                if isinstance(result, Exception):
-                    logger.error("UI Fetch failed", metric=name, error=str(result))
-                    metrics_map[name] = []
-                else:
-                    metrics_map[name] = result
+            if latest_data:
+                metrics_map = latest_data['metrics_map']
+                scored_snapshot = []
+                
+                # Process fetched data
+                for name, result in metrics_map.items():
                     if result:
                         scored_snapshot.append(analyzer.score_metric(result[-1]))
+                
+                # Log stream stats
+                stats = stream.get_stats()
+                logger.info("Stream data consumed", 
+                           fetch_duration=f"{latest_data.get('fetch_duration', 0):.2f}s",
+                           stats=stats)
+            else:
+                # No data yet - show waiting message and create default snapshot
+                st.warning("⏳ Waiting for initial data stream... This may take up to 60 seconds.")
+                metrics_map = {}
+                scored_snapshot = []
+                
+                # Create default snapshot with all required keys
+                st.session_state.metrics_map = metrics_map
+                st.session_state.snapshot = {
+                    'label': 'INITIALIZING',
+                    'score': 0.0,
+                    'confidence': 'PENDING',
+                    'breakdown': [],
+                    'engine_version': '5.1',
+                    'timestamp': time.time()
+                }
+                st.session_state.mtf = {'weekly': None, 'monthly': None}
+                st.session_state.history = []
+                return  # Exit early to avoid processing empty data
             
             st.session_state.metrics_map = metrics_map
             st.session_state.snapshot = calculate_regime(scored_snapshot)
