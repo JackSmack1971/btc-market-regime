@@ -27,10 +27,173 @@ def render_macro_thesis(mtf: Dict[str, Any]):
     st.plotly_chart(plot_confluence_heatmap(mtf), use_container_width=True)
 
 def render_component_breakdown(breakdown: List[Dict[str, Any]]):
-    """Renders the individual indicator breakdown table."""
+    """Renders the individual indicator breakdown table with auto-refresh."""
     st.markdown("### COMPONENT BREAKDOWN")
-    df = pd.DataFrame(breakdown)
-    st.dataframe(df[['metric_name', 'score', 'raw_value', 'confidence']], use_container_width=True)
+    
+    @st.fragment(run_every="0.5s")
+    def render_indicators_table():
+        """Auto-refreshing HTML table for Top 8 Indicators."""
+        if not breakdown:
+            st.info("No indicator data available")
+            return
+        
+        # Build HTML table with Finance Green/Bloomberg Red styling
+        html = """
+        <style>
+        .indicators-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: rgba(31, 40, 51, 0.4);
+            border: 1px solid #45a29e;
+            border-radius: 3px;
+            overflow: hidden;
+            font-feature-settings: "tnum" 1;
+        }
+        
+        .indicators-table thead {
+            background: rgba(5, 217, 232, 0.1);
+        }
+        
+        .indicators-table th {
+            padding: 12px 16px;
+            text-align: left;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 0.75rem;
+            color: #05D9E8;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            border-bottom: 2px solid #05D9E8;
+        }
+        
+        .indicators-table tbody tr {
+            background: rgba(11, 12, 16, 0.6);
+            transition: background 0.15s ease-out;
+        }
+        
+        .indicators-table tbody tr:hover {
+            background: rgba(31, 40, 51, 0.7);
+        }
+        
+        .indicators-table td {
+            padding: 10px 16px;
+            border-bottom: 1px solid rgba(69, 162, 158, 0.2);
+        }
+        
+        /* Label Column: Inter Regular 60% grey */
+        .indicator-label {
+            font-family: 'Inter', sans-serif;
+            font-weight: 400;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        /* Value Columns: JetBrains Mono Bold 100% white */
+        .indicator-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 1.0);
+            text-align: right;
+        }
+        
+        /* Momentum Signals: Finance Green / Bloomberg Red */
+        .momentum-positive {
+            color: #4AF6C3;
+            text-shadow: 0 0 8px rgba(74, 246, 195, 0.4);
+        }
+        
+        .momentum-negative {
+            color: #FF433D;
+            text-shadow: 0 0 8px rgba(255, 67, 61, 0.4);
+        }
+        
+        .momentum-neutral {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        /* Confidence Badge */
+        .confidence-high {
+            color: #4AF6C3;
+            font-weight: 600;
+        }
+        
+        .confidence-medium {
+            color: #FFD60A;
+            font-weight: 600;
+        }
+        
+        .confidence-low {
+            color: #FF433D;
+            font-weight: 600;
+        }
+        </style>
+        
+        <table class="indicators-table">
+            <thead>
+                <tr>
+                    <th>INDICATOR</th>
+                    <th style="text-align: right;">SCORE</th>
+                    <th style="text-align: right;">RAW VALUE</th>
+                    <th style="text-align: right;">CONFIDENCE</th>
+                </tr>
+            </thead>
+            <tbody>
+        """
+        
+        for indicator in breakdown[:8]:  # Top 8 indicators
+            metric_name = indicator.get('metric_name', 'Unknown')
+            score = indicator.get('score', 0.0)
+            raw_value = indicator.get('raw_value', 0.0)
+            confidence = indicator.get('confidence', 'UNKNOWN')
+            
+            # Determine momentum class based on score
+            if score > 0.5:
+                momentum_class = "momentum-positive"
+                momentum_symbol = "▲"
+            elif score < -0.5:
+                momentum_class = "momentum-negative"
+                momentum_symbol = "▼"
+            else:
+                momentum_class = "momentum-neutral"
+                momentum_symbol = "●"
+            
+            # Confidence styling
+            if confidence == "HIGH":
+                confidence_class = "confidence-high"
+            elif confidence == "MEDIUM":
+                confidence_class = "confidence-medium"
+            else:
+                confidence_class = "confidence-low"
+            
+            # Format raw value
+            if isinstance(raw_value, (int, float)):
+                if abs(raw_value) >= 1000:
+                    raw_value_str = f"{raw_value:,.0f}"
+                else:
+                    raw_value_str = f"{raw_value:.2f}"
+            else:
+                raw_value_str = str(raw_value)
+            
+            html += f"""
+                <tr>
+                    <td class="indicator-label">{metric_name}</td>
+                    <td class="indicator-value {momentum_class}">{momentum_symbol} {score:.2f}</td>
+                    <td class="indicator-value">{raw_value_str}</td>
+                    <td class="indicator-value {confidence_class}">{confidence}</td>
+                </tr>
+            """
+        
+        html += """
+            </tbody>
+        </table>
+        """
+        
+        st.html(html)
+    
+    # Render the auto-refreshing fragment
+    render_indicators_table()
 
 def render_historical_analysis(history: List[Dict[str, Any]], metrics_map: Dict[str, Any]):
     """Renders the historical regime chart with price overlay."""
