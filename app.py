@@ -9,7 +9,9 @@ from src.ui.layout import apply_custom_css, inject_google_fonts
 from src.ui.charts import plot_regime_history, plot_confluence_heatmap, plot_score_gauge
 from src.utils import logger, health_tracker, alert_manager
 from src.intelligence.forecaster import RegimeForecaster
+from src.intelligence.detector import AnomalyDetector
 from src.backtesting.optimizer import BacktestOptimizer
+import numpy as np
 
 # Configuration
 SOURCES_PATH = "config/sources.yaml"
@@ -105,6 +107,29 @@ def main():
             st.session_state.mtf = analyze_mtf(metrics_map, analyzer)
             st.session_state.history = analyze_history(metrics_map, analyzer)
             
+            # Anomaly Detection Training & Execution
+            if st.session_state.history:
+                # Prepare historical data for detector (N days x 8 features)
+                # We need to reconstruct the feature matrix from metrics_map
+                hist_matrix = []
+                # Ensure we only use dates where we have a full set of metrics
+                # For simplicity in this iteration, we'll use the breakdown from analyze_history
+                for entry in st.session_state.history:
+                    # Sort breakdown by metric name for consistent vectorization
+                    sorted_b = sorted(entry['breakdown'], key=lambda x: x['metric_name'])
+                    hist_matrix.append([m['score'] for m in sorted_b])
+                
+                if len(hist_matrix) >= 10:
+                    detector = AnomalyDetector(contamination=0.05)
+                    detector.fit(np.array(hist_matrix))
+                    
+                    # Detect in current snapshot
+                    current_vector = np.array([m.score for m in sorted(scored_snapshot, key=lambda x: x.metric_name)])
+                    anomaly_res = detector.detect(current_vector)
+                    
+                    # Update snapshot with anomaly data
+                    st.session_state.snapshot = calculate_regime(scored_snapshot, anomaly_status=anomaly_res)
+            
             # 🚨 Regime Flip Detection & Alerts
             if 'previous_regime' in st.session_state:
                 prev = st.session_state.previous_regime
@@ -142,6 +167,15 @@ def main():
 
     with col3:
         render_component_breakdown(st.session_state.snapshot['breakdown'])
+
+    # Anomaly Alert Banner
+    if 'anomaly_alert' in st.session_state.snapshot:
+        alert = st.session_state.snapshot['anomaly_alert']
+        if alert['is_anomaly']:
+            severity = alert['severity']
+            color = "red" if severity == "HIGH" else "orange"
+            st.error(f"🚨 **ANOMALY DETECTED**: {severity} SEVERITY MARKET BEHAVIOR", icon="⚠️")
+            st.caption(f"Anomaly Score: {alert['anomaly_score']:.4f} | Detection Model: Isolation Forest")
 
     st.markdown("---")
     

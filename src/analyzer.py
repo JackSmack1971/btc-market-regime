@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import yaml
 from datetime import datetime
 from abc import ABC, abstractmethod
@@ -195,7 +195,7 @@ def analyze_mtf(metrics_map: Dict[str, List[MetricData]], analyzer: RegimeAnalyz
     }
 
 from datetime import timedelta
-def calculate_regime(scored_metrics: List[ScoredMetric]) -> Dict[str, Any]:
+def calculate_regime(scored_metrics: List[ScoredMetric], anomaly_status: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Aggregates individual metric scores into a final market regime verdict."""
     if not scored_metrics:
         return {"total_score": 0.0, "label": "DATA UNAVAILABLE", "breakdown": []}
@@ -221,7 +221,7 @@ def calculate_regime(scored_metrics: List[ScoredMetric]) -> Dict[str, Any]:
         for m in scored_metrics
     ]
 
-    return {
+    res = {
         "engine_version": "1.0.0",
         "timestamp": datetime.now().isoformat(),
         "score": round(total_score, 2),
@@ -229,3 +229,8 @@ def calculate_regime(scored_metrics: List[ScoredMetric]) -> Dict[str, Any]:
         "confidence": overall_confidence,
         "breakdown": breakdown
     }
+    
+    if anomaly_status:
+        res["anomaly_alert"] = anomaly_status
+        
+    return res

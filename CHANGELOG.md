@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - Experimental ML regime forecasting for 12-hour projections.
   - Bayesian Weight Optimizer (Optuna) for indicator weight refinement.
 - **Operational HUD**: Sidebar Mission Control for real-time API health and provider latency monitoring.
+- **Anomaly Detection**: Unsupervised ML (Isolation Forest) for detection of flash crashes and extreme market behavior.
 - **Alert Bridge**: Telegram and audio notifications for market regime flips.
 - **UI Modularization**: Extracted dashboard components into `src/ui/dashboard.py`.
 

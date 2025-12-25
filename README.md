@@ -20,6 +20,7 @@ Built for resilience and accuracy. This tool uses a **Multi-Tier Fallback Protoc
   - RSI (14-day)
 - **Hardened Networking**: Defensive UA headers, consistent timeouts, and rate-limiting.
 - **Forensic QA**: Automated schema validation to detect and report API drift.
+- **Anomaly Detection**: Unsupervised ML (Isolation Forest) for early warning of extreme market behavior.
 
 ## 📥 Installation
 
