@@ -4,7 +4,7 @@ from datetime import datetime
 from src.fetchers import FetcherFactory
 from src.analyzer import RegimeAnalyzer, calculate_regime, analyze_history, analyze_mtf
 from src.ui.layout import apply_custom_css, inject_google_fonts
-from src.ui.charts import plot_regime_history, plot_confluence_heatmap
+from src.ui.charts import plot_regime_history, plot_confluence_heatmap, plot_score_gauge
 from src.utils import logger
 
 # Configuration
@@ -74,8 +74,13 @@ def main():
         res = st.session_state.snapshot
         label_class = "regime-bull" if res['label'] == "BULL" else "regime-bear" if res['label'] == "BEAR" else "regime-neutral"
         st.markdown(f"### CURRENT REGIME: <span class='{label_class}'>{res['label']}</span>", unsafe_allow_html=True)
-        st.metric("Total Score", f"{res['total_score']:.2f}", delta=None)
-        st.metric("Confidence", res['confidence'])
+        
+        # Tooltip explanation for Total Score
+        st.metric("Total Score", f"{res['total_score']:.2f}", help="Aggregated score from -5 (Strong Bear) to +5 (Strong Bull). Calculated across all active fetchers.")
+        st.metric("Confidence", res['confidence'], help="Weighted average of data source reliability and signal strength.")
+        
+        # New Score Gauge
+        st.plotly_chart(plot_score_gauge(res['total_score']), use_container_width=True)
 
     # 2. MTF Confluence
     with col2:
@@ -92,7 +97,30 @@ def main():
     st.markdown("---")
     
     # 4. Historical Chart
-    st.plotly_chart(plot_regime_history(st.session_state.history), use_container_width=True)
+    # Extract BTC price for overlay if available (e.g. from binance/coingecko fetcher)
+    btc_prices = pd.DataFrame()
+    if 'binance' in st.session_state.metrics_map:
+        btc_prices = pd.DataFrame(st.session_state.metrics_map['binance'])
+        btc_prices.set_index('timestamp', inplace=True)
+    elif 'coingecko' in st.session_state.metrics_map:
+        btc_prices = pd.DataFrame(st.session_state.metrics_map['coingecko'])
+        btc_prices.set_index('timestamp', inplace=True)
+
+    st.plotly_chart(plot_regime_history(st.session_state.history, btc_prices), use_container_width=True)
+
+    # 5. Technical Logs
+    with st.expander("🛠️ TECHNICAL LOGS & AGENT REASONING"):
+        st.markdown("### RAW DATA STATUS")
+        for name, data in st.session_state.metrics_map.items():
+            status = "✅ SUCCESS" if data else "❌ FAILED"
+            st.write(f"- **{name.upper()}**: {status}")
+        
+        st.markdown("### REASONING LOG")
+        st.code(f"""
+Engine Version: {res['engine_version']}
+Regime Logic: {res['label']} based on score {res['total_score']:.2f}
+MTF Confluence: {st.session_state.mtf['confluence_score']}%
+        """, language="text")
 
     # Footer
     st.markdown(f"**ENGINE V{st.session_state.snapshot['engine_version']}** | LAST SYNC: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
