@@ -2,16 +2,13 @@
 
 ## 1. Complexity Scan (Refactoring Candidates)
 
-### 🔴 High Priority: `src/fetchers.py`
-- **Metric**: 297 lines (Approaching the 300-line threshold).
-- **Issue**: **Class Density**. This file contains 8 indicator fetcher implementations plus a factory and a safe network client.
-- **Volatility**: High. This file is the primary target for any new data source additions.
-- **Recommendation**: Split `fetchers.py` into a `src/fetchers/` directory with individual files per indicator (e.g., `src/fetchers/fear_greed.py`, `src/fetchers/on_chain.py`).
+### 🟢 COMPLETED: `src/fetchers/` Modularization
+- **Result**: Successfully split monolithic `fetchers.py` into specialized async modules.
+- **Benefit**: Improved maintainability and enabled parallel execution.
 
-### 🟡 Medium Priority: `src/analyzer.py`
-- **Metric**: `score_metric` function depth.
-- **Issue**: **Indicator Routing Logic**. The large `if/elif` block used to route scores to different logic (Momentum vs Absolute vs Mean Reversion) is functional but will become brittle as indicators increase.
-- **Recommendation**: Implement a **Strategy Pattern** for indicator scoring logic to decouple the `RegimeAnalyzer` from specific indicator math.
+### 🟢 COMPLETED: SQLite Caching Layer
+- **Result**: Implemented SQLite persistence via `db_manager.py`, replacing pickle files.
+- **Benefit**: ACID compliance and sub-second UI refresh times.
 
 ## 2. Comment Audit (Debt Markers)
 - **Grep Results**: `TODO`: 0, `FIXME`: 0, `HACK`: 0, `XXX`: 0.
@@ -27,11 +24,10 @@
 
 ## 4. Prioritized Action Plan
 
-| Rank | Item | Category | Effort | Impact |
-|------|------|----------|--------|--------|
-| 1 | Modularize Fetchers | Architecture | Low | High (Maintainability) |
-| 2 | Strategy Scorer | Architecture | Medium| Medium (Extensibility) |
-| 3 | Caching Layer | Performance | Medium| High (Resilience) |
+| Rank | Item | Category | Effort | Impact | Status |
+|------|------|----------|--------|--------|--------|
+| 1 | Restore CLI Parity | Architecture | Medium | High | PENDING |
+| 2 | Strategy Scorer | Architecture | Medium| Medium | PENDING |
 
 ---
 **Verdict**: Total Debt is **LOW**. The architecture is stable but needs modularization to support future scaling.

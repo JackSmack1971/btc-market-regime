@@ -44,17 +44,17 @@
 
 ### **PHASE 2.1: Architecture & Performance** (Effort: 3-4 days | Impact: HIGH)
 
-#### P0 - Foundation & Speed
+#### P0 - Foundation & Speed [COMPLETED]
 
-**1. Modularize Fetchers** ⚡ **STABILITY**
+**1. Modularize Fetchers** ✅ **DONE**
 - Refactor monolithic `fetchers.py` into specialized modules.
 - Ensure isolation and parallel execution safety.
 
-**2. Implement Caching Layer** ⚡ **LATENCY REDUCTION**
+**2. Implement Caching Layer** ✅ **DONE** (SQLite Implementation)
 - Reduce UI refresh time from 5-8s to <1s for repetitive views.
 - Implement disk-based TTL caching to protect API budgets.
 
-**3. API Health & Budget HUD** 🛠️ **OPERATIONAL VISIBILITY**
+**3. API Health & Budget HUD** ✅ **DONE**
 - Visual status indicator for all data dependencies.
 - Tracking of rate limits and fetch success rates.
 
@@ -200,11 +200,10 @@ SCORING_REGISTRY = {
 
 ### **PHASE 2.2: Advanced Analytics** (Effort: 5-7 days | Impact: VERY HIGH)
 
-#### P1 - Machine Learning Integration
+#### P1 - Machine Learning Integration [COMPLETED/EXPERIMENTAL]
 
-**4. Regime Forecasting Engine** 🔮 **GAME CHANGER**
-
-**Objective**: Predict regime transitions 1-7 days ahead using LSTM/GRU models
+**4. Regime Forecasting Engine** ✅ **DONE** (Experimental Linear Model)
+- Predict regime transitions using scoring patterns.
 
 **Architecture**:
 ```python

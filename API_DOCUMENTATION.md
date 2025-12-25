@@ -1,46 +1,43 @@
 # API Documentation & Metric Schema
+*Version 1.1 | Async-First Modular Context*
 
-This document details the data structures and metrics utilized by the Regime Analysis Engine.
+## 1. Metric Definition Matrix
+| Metric | Code Key | Type | Confluence Weight |
+|--------|----------|------|-------------------|
+| Fear & Greed | `fear_greed_index` | Sentiment | 1.0 |
+| Hash Rate | `hash_rate` | Momentum | 0.8 |
+| MVRV Ratio | `mvrv_ratio` | Valuation | 0.9 |
+| Funding Rate| `perpetual_funding_rates` | Derivatives | 1.0 |
+| RSI (14d) | `price_data` | Oscillator | 0.6 |
 
-## 1. Metric Breakdown
+## 2. Core Data Contracts
 
-| Metric | Source (Primary) | Type | Bullish Signal | Bearish Signal |
-|--------|------------------|------|----------------|----------------|
-| **Fear & Greed** | Alternative.me | Sentiment | Score > 70 | Score < 30 |
-| **Hash Rate** | Blockchain.info | Momentum | > 1.1x MA30 | < 0.9x MA30 |
-| **MVRV Ratio** | CoinMetrics | Valuation | < 1.0 (Undervalued) | > 3.0 (Overvalued) |
-| **Funding Rate**| Binance | Derivatives | > 0.01% (Premium) | < -0.01% (Discount)|
-| **RSI (14d)** | CoinGecko | Oscillator | < 30 (Oversold) | > 70 (Overbought) |
-
-## 2. Global Data structures
-
-### MetricData (Internal)
-The raw object returned by fetchers after successful retrieval or fallback.
-- `metric_name`: (str) e.g., "fear_greed_index"
-- `value`: (float) Numeric metric value.
-- `timestamp`: (ISO8601) Fetch time.
-- `source`: (str) "primary", "backup", or "failed".
+### MetricData (Raw Retrieval)
+The object produced by `src/fetchers/` and consumed by the `RegimeAnalyzer`.
+- `metric_name`: (str) Unique identifier.
+- `value`: (float) Raw numeric signal.
+- `timestamp`: (datetime) Retrieval UTC mark.
+- `source`: (str) "primary" or "backup".
+- `is_fallback`: (bool) True if Tier 2 retrieval was triggered.
 
 ### ScoredMetric (Processed)
-The object used by the analyzer for final aggregation.
-- `score`: (float) Weighted impact (-1.0 to 1.0).
-- `confidence`: (str) Quality tier (HIGH/MEDIUM/LOW).
+- `score`: (float) [-1.0, 1.0] intensity.
+- `confidence`: (str) HIGH | MEDIUM | LOW based on data quality.
 
-## 3. Fallback Protocol (Forensic)
-All API endpoints are validated against their forensic schema defined in `tests/api_contract_test.py`.
+## 3. High-Performance Retrieval (`SafeNetworkClient`)
+Integrated via `src/fetchers/base.py`.
+- **Latency Control**: 0.5s mandatory sleep between serial requests (Async).
+- **Timeout**: 5s global hard limit per request.
+- **Provider Parity**: All fetchers utilize a shared `aiohttp` session for connection pooling efficiency.
 
-### Schema Example (CoinMetrics MVRV)
+## 4. Logical Schemas
+Internal JSON structure for SQLite caching:
 ```json
 {
-  "data": [
-    {
-      "asset": "btc",
-      "time": "2025-09-17T00:00:00Z",
-      "CapMVRVCur": "2.18"
-    }
-  ]
+  "metric_name": "fear_greed_index",
+  "value": 45.0,
+  "timestamp": "2025-12-25T15:05:00Z",
+  "source": "primary",
+  "is_fallback": false
 }
 ```
-
-## 4. Rate Limiting
-The `SafeNetworkClient` enforces a **1-second delay** between all external requests to ensure compliance with free-tier API usage policies.

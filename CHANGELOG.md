@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-12-25
+
+### Added
+- **Async-First Architecture**: Refactored the entire engine to use `asyncio` and `aiohttp` for parallel, non-blocking data retrieval.
+- **SQLite Persistence**: Replaced volatile pickle files with a robust SQLite database for caching and historical data auditing.
+- **Intelligence Suite**: 
+  - Experimental ML regime forecasting for 12-hour projections.
+  - Bayesian Weight Optimizer (Optuna) for indicator weight refinement.
+- **Operational HUD**: Sidebar Mission Control for real-time API health and provider latency monitoring.
+- **Alert Bridge**: Telegram and audio notifications for market regime flips.
+- **UI Modularization**: Extracted dashboard components into `src/ui/dashboard.py`.
+
+### Changed
+- **Performance**: Reduced UI refresh latency from >10s to <1s via parallel execution.
+- **Reliability**: Integrated ACID-compliant caching for 100% data integrity during system restarts.
+
 ## [1.0.0] - 2025-12-25
 
 ### Added

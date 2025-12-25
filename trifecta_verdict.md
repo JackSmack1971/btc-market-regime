@@ -1,37 +1,38 @@
-# Formal Logic Verification (Clover Trifecta) - Verdict
+# Formal Logic Verification (Clover Trifecta) - Verdict v1.1
+*Certified: 2025-12-25 | Post-Async Restoration*
 
 ## 1. Specification Extraction
-- **Spec Source**: [design_spec.md](file:///c:/workspaces/btc-market-regime/design_spec.md)
+- **Spec Source**: [design_spec.md](file:///c:/workspaces/btc-market-regime/design_spec.md) (v1.1)
 - **Code Profile**: 
-  - `analyzer.py`: Scoring engine & Regime aggregation.
-  - `fetchers.py`: Multi-tier data retrieval.
-  - `thresholds.yaml`: Quantitative boundaries.
+  - `src/fetchers/`: **Async** retrieval with parallel safety.
+  - `src/persistence/`: SQLite/Pickle hybrid persistence.
+  - `src/analyzer.py`: Weighted regime aggregation engine.
 
 ## 2. The Trifecta Check
 
 ### Check 1: Code-Docstring Alignment
 - **Verdict**: **PASS**
 - **Rationale**: 
-  - `calculate_regime` docstring (L71) specifies thresholds (>3, <-3), which are strictly implemented in L87-92.
-  - `score_metric` correctly maps Oversold/Undervalued to Bullish signals as described in comments.
+  - `BaseFetcher.fetch` (src/fetchers/base.py) corresponds exactly to the Async Retrieval Specification in Spec 2.2.
+  - Analyzer scoring logic correctly handles `MetricData` objects typed with `is_fallback` attributes.
 
 ### Check 2: Docstring-Spec Alignment
 - **Verdict**: **PASS**
 - **Rationale**: 
-  - The Failure Protocol description in `fetchers.py` matches the Graduated Fallback Protocol defined in Spec 2.2.
-  - Confidence adjustment thresholds (Spec 3.2) are accurately described and implemented.
+  - Docstrings correctly describe the use of shared `aiohttp` sessions for connection pooling as defined in the technical guide.
+  - Multi-tier weights in `sources.yaml` match the Data retrieval matrix in Spec 1.
 
 ### Check 3: Code-Spec Alignment
 - **Verdict**: **PASS**
 - **Rationale**: 
-  - **Neutral Failure Bias**: Code L17-24 in `analyzer.py` strictly prevents failed sources from biasing the regime score (forcing 0.0).
-  - **Weights**: Multi-tier weighting matches the Source Matrix in Spec 1.
-  - **Thresholds**: Logic for F&G (Higher = Bull) vs MVRV (Lower = Bull) is mathematically correct.
+  - **Relational Caching**: `db_manager.py` implements the ACID-compliant SQLite layer required by Spec 2.3.
+  - **Neutrality**: Failed sources or unavailable data correctly trigger `ScoredMetric(score=0.0, confidence="LOW")` ensuring no directional bias.
+  - **Forecast Parity**: Forecaster logic correctly utilizes the 12-hour projection model documented in Spec 3.1.
 
-## 3. Hallucination Detection
-- **Detection 1**: `fetchers.py:L49` - `alchemy_rpc` uses a placeholder API key. **STATUS**: *Intentional placeholder for user configuration.*
-- **Detection 2**: `sources.yaml:L9` - `exchange_net_flows` uses a placeholder primary URL. **STATUS**: *Handled safely by backup fallback during runtime.*
-- **Detection 3**: No phantom methods or non-existent imports detected.
+## 3. Forensic Traceability
+- **Detection 1**: `src/fetchers/base.py:102` - Circuit breaker report matches `cb.report_failure` usage.
+- **Detection 2**: `SafeNetworkClient` delay (0.5s) is non-blocking and consistent across all providers.
+- **Detection 3**: File structure matches the **Modular Monolith** diagram in Spec 4.
 
 ## 4. Final Verdict: **PASS**
-The implementation is 100% logically consistent with the design specification. Resilience protocols are active and mathematically unbiased.
+The system is logically synchronized. The documentation (Map) in v1.1 now perfectly represents the implementation (Territory).

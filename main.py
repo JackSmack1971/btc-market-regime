@@ -3,6 +3,8 @@ import sys
 import pandas as pd
 import json
 import argparse
+import asyncio
+import aiohttp
 from typing import List, Dict, Any
 from datetime import datetime
 from src.fetchers import FetcherFactory
@@ -27,29 +29,38 @@ METRIC_HINTS = {
 
 class MarketRegimeCLI:
     def __init__(self, sources_path: str, thresholds_path: str):
-        logger.info("Initializing engine", sources=sources_path, thresholds=thresholds_path)
+        logger.info("Initializing engine (Async CLI)", sources=sources_path, thresholds=thresholds_path)
         with open(sources_path, 'r') as f:
             self.sources_config = yaml.safe_load(f)['sources']
         self.analyzer = RegimeAnalyzer(thresholds_path)
 
-    def run(self, args):
+    async def run(self, args):
         """Executes the analysis workflow based on arguments."""
-        if args.days:
-            self.run_historical(args.days, args.export)
-        else:
-            self.run_snapshot(args.json)
+        async with aiohttp.ClientSession() as session:
+            if args.mtf:
+                await self.run_mtf(session)
+            elif args.days:
+                await self.run_historical(session, args.days, args.export)
+            else:
+                await self.run_snapshot(session, args.json)
 
-    def run_snapshot(self, as_json: bool):
-        scored_metrics: List[ScoredMetric] = []
+    async def run_snapshot(self, session: aiohttp.ClientSession, as_json: bool):
+        tasks = []
         for metric_name, config in self.sources_config.items():
-            try:
-                fetcher = FetcherFactory.create(metric_name, config)
-                data = fetcher.fetch()
-                scored = self.analyzer.score_metric(data)
-                scored_metrics.append(scored)
-            except Exception as e:
-                logger.error("Metric processing failed", metric=metric_name, error=str(e))
+            fetcher = FetcherFactory.create(metric_name, config)
+            tasks.append(fetcher.fetch(session))
+        
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        scored_metrics: List[ScoredMetric] = []
+        for i, res in enumerate(results):
+            metric_name = list(self.sources_config.keys())[i]
+            if isinstance(res, Exception):
+                logger.error("Metric fetch failed", metric=metric_name, error=str(res))
                 continue
+            if res:
+                scored = self.analyzer.score_metric(res)
+                scored_metrics.append(scored)
 
         if not scored_metrics:
             logger.critical("No data collected")
@@ -58,20 +69,30 @@ class MarketRegimeCLI:
 
         analysis = calculate_regime(scored_metrics)
         if as_json:
-            print(json.dumps(analysis, indent=2))
+            # Handle datetime serialization for JSON
+            print(json.dumps(analysis, indent=2, default=str))
         else:
             self.display_report(analysis)
 
-    def run_historical(self, days: int, export_path: str = None):
+    async def run_historical(self, session: aiohttp.ClientSession, days: int, export_path: str = None):
         print(f"\n{BOLD}### HISTORICAL REGIME ANALYSIS ({days} DAYS) ###{RESET}")
+        tasks = []
+        metric_names = list(self.sources_config.keys())
+        for name in metric_names:
+            config = self.sources_config[name]
+            fetcher = FetcherFactory.create(name, config)
+            tasks.append(fetcher.fetch_history(session, days))
+
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
         metrics_map = {}
-        for name, config in self.sources_config.items():
-            try:
-                fetcher = FetcherFactory.create(name, config)
-                metrics_map[name] = fetcher.fetch_history(days)
-            except Exception as e:
-                logger.error("Historical fetch failed", metric=name, error=str(e))
+        for i, res in enumerate(results):
+            name = metric_names[i]
+            if isinstance(res, Exception):
+                logger.error("Historical fetch failed", metric=name, error=str(res))
                 metrics_map[name] = []
+            else:
+                metrics_map[name] = res
 
         history = analyze_history(metrics_map, self.analyzer)
         
@@ -79,24 +100,31 @@ class MarketRegimeCLI:
             self.export_history(history, export_path)
             print(f"\n{GREEN}{BOLD}Exported historical results to {export_path}{RESET}")
         else:
-            # Print summary table
             print(f"\n{BOLD}Date       | Regime               | Score{RESET}")
             print("-" * 45)
             for day in history:
                 print(f"{day['timestamp']} | {day['label']:20} | {day['total_score']:.2f}")
             print("-" * 45 + "\n")
 
-    def run_mtf(self):
+    async def run_mtf(self, session: aiohttp.ClientSession):
         print(f"\n{BOLD}### MULTI-TIMEFRAME CONFLUENCE DASHBOARD ###{RESET}")
+        tasks = []
+        metric_names = list(self.sources_config.keys())
+        for name in metric_names:
+            config = self.sources_config[name]
+            fetcher = FetcherFactory.create(name, config)
+            tasks.append(fetcher.fetch_history(session, 30))
+
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
         metrics_map = {}
-        # Need 30 days for monthly
-        for name, config in self.sources_config.items():
-            try:
-                fetcher = FetcherFactory.create(name, config)
-                metrics_map[name] = fetcher.fetch_history(30)
-            except Exception as e:
-                logger.error("MTF Historical fetch failed", metric=name, error=str(e))
+        for i, res in enumerate(results):
+            name = metric_names[i]
+            if isinstance(res, Exception):
+                logger.error("MTF Historical fetch failed", metric=name, error=str(res))
                 metrics_map[name] = []
+            else:
+                metrics_map[name] = res
 
         from src.analyzer import analyze_mtf
         results = analyze_mtf(metrics_map, self.analyzer)
@@ -120,12 +148,10 @@ class MarketRegimeCLI:
     def export_history(self, history: List[dict], filename: str):
         if filename.endswith('.json'):
             with open(filename, 'w') as f:
-                json.dump(history, f, indent=2)
+                json.dump(history, f, indent=2, default=str)
         else:
-            # Default to CSV
             import csv
             if not history: return
-            # Flatten metrics for CSV
             csv_data = []
             for entry in history:
                 row = {
@@ -134,7 +160,6 @@ class MarketRegimeCLI:
                     "score": entry["total_score"],
                     "confidence": entry["confidence"]
                 }
-                # Add individual metric scores
                 for m in entry.get("breakdown", []):
                     row[f"score_{m['metric']}"] = m["score"]
                     row[f"raw_{m['metric']}"] = m["raw_value"]
@@ -182,7 +207,7 @@ def print_help_metrics():
         print(f"  {hint}\n")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Bitcoin Market Regime Analysis Engine")
+    parser = argparse.ArgumentParser(description="Bitcoin Market Regime Analysis Engine (Async)")
     parser.add_argument("--json", action="store_true", help="Output results as raw JSON")
     parser.add_argument("--help-metrics", action="store_true", help="Show explanation of metrics")
     parser.add_argument("--days", type=int, help="Number of days for historical analyst")
@@ -199,10 +224,7 @@ if __name__ == "__main__":
     
     try:
         cli = MarketRegimeCLI(args.sources, args.thresholds)
-        if args.mtf:
-            cli.run_mtf()
-        else:
-            cli.run(args)
+        asyncio.run(cli.run(args))
     except Exception as e:
         logger.critical("Application Crash", error=str(e))
         print(f"{RED}[CRITICAL] Application Crash: {e}{RESET}")

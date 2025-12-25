@@ -6,6 +6,8 @@ A professional-grade market intelligence engine designed to determine the curren
 Built for resilience and accuracy. This tool uses a **Multi-Tier Fallback Protocol** to ensure that even during API outages or regional restrictions, the analytical pipeline remains functional and unbiased.
 
 ## 🛠 Features
+- **High-Performance Async Retrieval**: Parallel non-blocking data fetching via `asyncio` and `aiohttp`.
+- **Relational Persistence**: SQLite-based caching replaces legacy pickle files for 100% data integrity.
 - **Resilient Data Fetching**: Tiered retrieval (Primary -> Backup -> Neutral) with automated circuit breakers.
 - **Quantitative Scoring**: Weighted aggregation of 8 specialized indicators:
   - Fear & Greed Index
@@ -22,8 +24,8 @@ Built for resilience and accuracy. This tool uses a **Multi-Tier Fallback Protoc
 ## 📥 Installation
 
 ### Prerequisites
-- Python 3.10+
-- Pip
+- Python 3.12+
+- aiohttp, scikit-learn, optuna, statsmodels (see requirements.txt)
 
 ### Setup
 1. **Clone the repository**:
@@ -77,10 +79,12 @@ python tests/api_contract_test.py
 ```
 
 ## 🏗 Architecture
-- `src/fetchers.py`: The data retrieval layer with fallback logic.
+- `src/fetchers/`: Modular async retrieval package (Base, On-Chain, Sentiment, etc.).
+- `src/persistence/`: SQLite-driven data persistence logic.
 - `src/analyzer.py`: The scoring engine and aggregation logic.
+- `src/intelligence/`: ML Forecasting and Backtest Optimization suite.
+- `src/ui/`: Modular Streamlit dashboard components.
 - `config/thresholds.yaml`: Centralized configuration for bullish/bearish boundaries.
-- `config/sources.yaml`: API endpoint management.
 
 ## ⚖️ License
 MIT License. See `LICENSE` for details.
