@@ -187,27 +187,71 @@ def analyze_mtf(metrics_map: Dict[str, List[MetricData]], analyzer: RegimeAnalyz
     else:
         thesis = "MIXED SIGNALS: Market is in a transitional state without clear timeframe alignment."
 
+    # Calculate confluence score (percentage of agreement)
+    # 3 matching = 100%, 2 matching = 66%, 0 matching labels = 33% (neutral base)
+    matching_count = labels.count(max(set(labels), key=labels.count))
+    confluence_score = int((matching_count / 3) * 100)
+
     return {
         "daily": daily,
         "weekly": weekly,
         "monthly": monthly,
-        "macro_thesis": thesis
+        "macro_thesis": thesis,
+        "confluence_score": confluence_score
     }
 
 from datetime import timedelta
+def get_metric_narrative(metric_name: str, score: float, value: float) -> str:
+    """Translates a quantitative score into a qualitative market narrative."""
+    # Mapping of metric names to human-readable labels
+    labels = {
+        "fear_greed_index": "Fear & Greed Index",
+        "perpetual_funding_rates": "Funding Rates",
+        "mvrv_ratio": "MVRV Ratio",
+        "rsi": "RSI Momentum",
+        "hash_rate": "Network Hash Rate",
+        "exchange_net_flows": "Exchange Net Flows",
+        "active_addresses": "Active Addresses",
+        "open_interest": "Open Interest"
+    }
+    
+    label = labels.get(metric_name, metric_name.replace("_", " ").title())
+    
+    if abs(score) < 0.2:
+        return f"{label} is signaling neutral/sideways action."
+    
+    sentiment = "Bullish" if score > 0 else "Bearish"
+    intensity = "Extreme" if abs(score) >= 1.5 else "Strong" if abs(score) >= 1.0 else "Moderate"
+    
+    # Specific context for certain indicators
+    if metric_name == "fear_greed_index":
+        context = "Extreme Greed" if value > 75 else "Fear" if value < 25 else "Greed" if value > 50 else "Moderate Fear"
+        return f"{label} shows {context} ({ sentiment })."
+    
+    if metric_name == "rsi":
+        context = "Oversold" if value < 30 else "Overbought" if value > 70 else sentiment
+        return f"{label} indicates {intensity} {context} conditions."
+
+    return f"{label} provides {intensity} {sentiment} pressure."
+
 def calculate_regime(scored_metrics: List[ScoredMetric], anomaly_status: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Aggregates individual metric scores into a final market regime verdict."""
     if not scored_metrics:
-        return {"total_score": 0.0, "label": "DATA UNAVAILABLE", "breakdown": []}
+        return {
+            "score": 0.0, 
+            "label": "DATA UNAVAILABLE", 
+            "breakdown": [],
+            "reasoning": ["No data available to generate market reasoning."]
+        }
 
-    total_score = sum(m.score for m in scored_metrics)
+    score = sum(m.score for m in scored_metrics)
     
     low_confidence_pct = sum(1 for m in scored_metrics if m.confidence == "LOW") / len(scored_metrics)
     overall_confidence = "HIGH" if low_confidence_pct < 0.3 else "MEDIUM"
     if low_confidence_pct > 0.6: overall_confidence = "LOW"
     
-    if total_score > 3: label = "BULL"
-    elif total_score < -3: label = "BEAR"
+    if score > 3: label = "BULL"
+    elif score < -3: label = "BEAR"
     else: label = "SIDEWAYS/TRANSITIONAL"
 
     breakdown = [
@@ -221,13 +265,21 @@ def calculate_regime(scored_metrics: List[ScoredMetric], anomaly_status: Optiona
         for m in scored_metrics
     ]
 
+    # Identify top 3 driving metrics by absolute score
+    top_drivers = sorted(scored_metrics, key=lambda m: abs(m.score), reverse=True)[:3]
+    reasoning = [get_metric_narrative(m.metric_name, m.score, m.raw_value) for m in top_drivers]
+    
+    if not reasoning:
+        reasoning = ["No data available to generate market reasoning."]
+
     res = {
         "engine_version": "1.0.0",
         "timestamp": datetime.now().isoformat(),
-        "score": round(total_score, 2),
+        "score": round(score, 2),
         "label": label,
         "confidence": overall_confidence,
-        "breakdown": breakdown
+        "breakdown": breakdown,
+        "reasoning": reasoning
     }
     
     if anomaly_status:

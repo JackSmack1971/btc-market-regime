@@ -22,16 +22,22 @@ class RegimeForecaster:
             return None, None
             
         df = pd.DataFrame(self.history)
+        # Ensure we use the standardized key 'score'
+        # If 'total_score' exists, map it to 'score' for compatibility
+        if 'total_score' in df.columns and 'score' not in df.columns:
+            df['score'] = df['total_score']
+            
+        if 'score' not in df.columns:
+            return None, None
+
         df['timestamp'] = pd.to_datetime(df['timestamp'])
         df = df.sort_values('timestamp')
         
-        # Use simple lag features for the forecast
-        # Target: total_score at T+1
-        # Feature: total_score at T
-        df['target'] = df['total_score'].shift(-1)
+        # Target: score at T+1
+        df['target'] = df['score'].shift(-1)
         df = df.dropna()
         
-        X = df[['total_score']].values
+        X = df[['score']].values
         y = df['target'].values
         return X, y
 
@@ -77,5 +83,4 @@ class RegimeForecaster:
         if not self.is_trained:
             return "Insufficient data for forecasting."
         
-        # Implementation of a simple summary logic
         return "Model trained on history. Projections active."

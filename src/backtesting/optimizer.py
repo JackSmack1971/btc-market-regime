@@ -30,7 +30,7 @@ class BacktestOptimizer:
         # Example: weights['fear_greed_index'] * score_fg + ...
         # Simplified: return the 'Total Score' alignment with returns
         returns = self.price_df['price'].pct_change().shift(-1).fillna(0)
-        scores = df['total_score'].values
+        scores = df['score'].values
         
         correlation = np.corrcoef(scores, returns[:len(scores)])[0, 1]
         return float(correlation) if not np.isnan(correlation) else 0.0

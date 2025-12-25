@@ -32,7 +32,8 @@
 - **"Do Not Touch" List**: 
     - `src/persistence/db_manager.py`: Core relational integrity.
     - `src/fetchers/base.py`: Core async retrieval logic.
-- **Refactor Priority**:
-    - [MEDIUM] Implement Strategy Pattern for specific indicator math in `analyzer.py`.
+- [x] Logic Explainability Engine: DONE
+- [ ] Strategy Pattern for Scoring: MEDIUM PRIORITY
+indicator math in `analyzer.py`.
     - [DONE] Integrate Anomaly Detection system.
     - [LOW] Expand forecasting horizons beyond 12-hour linear models.

@@ -101,16 +101,11 @@ def render_technical_logs(metrics_map: Dict[str, Any], snapshot: Dict[str, Any],
                 st.write(f"- **{name.upper()}**: {status}")
         
         with col2:
-            st.markdown("### REASONING NARRATIVE")
-            score = snapshot['score']
-            label = snapshot['label']
+            st.markdown("### 🧠 INTELLIGENCE BRIEFING")
+            reasoning = snapshot.get('reasoning', ["Market logic is currently being calculated..."])
             
-            narrative = f"The Bitcoin market is currently in a **{label}** regime. "
-            if score > 3: narrative += "Signals are overwhelmingly bullish."
-            elif score > 1: narrative += "Constructive signals dominate."
-            elif score > -1: narrative += "Conflicting data points suggest range-bound."
-            elif score > -3: narrative += "Defensive signals are emerging."
-            else: narrative += "Strong bearish confluence."
+            # Display bullet points for each reason
+            for item in reasoning:
+                st.markdown(f"• {item}")
             
-            st.info(narrative)
-            st.code(f"Version: {snapshot['engine_version']} | Score: {score:.2f} | Confluence: {mtf['confluence_score']}%")
+            st.caption(f"Engine Version: {snapshot.get('engine_version', '1.0.0')} | Confluence: {mtf.get('confluence_score', 0)}%")

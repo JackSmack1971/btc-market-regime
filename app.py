@@ -117,7 +117,10 @@ def main():
                 for entry in st.session_state.history:
                     # Sort breakdown by metric name for consistent vectorization
                     sorted_b = sorted(entry['breakdown'], key=lambda x: x['metric_name'])
-                    hist_matrix.append([m['score'] for m in sorted_b])
+                    vector = [m['score'] for m in sorted_b]
+                    # Only add if we have the full set of 8 indicators
+                    if len(vector) == 8:
+                        hist_matrix.append(vector)
                 
                 if len(hist_matrix) >= 10:
                     detector = AnomalyDetector(contamination=0.05)
