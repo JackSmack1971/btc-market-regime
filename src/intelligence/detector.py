@@ -65,7 +65,7 @@ class AnomalyDetector:
         if not is_anomaly:
             severity = "LOW"
         else:
-            if decision_score < -0.2:
+            if decision_score < -0.05:
                 severity = "HIGH"
             else:
                 severity = "MEDIUM"
