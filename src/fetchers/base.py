@@ -5,7 +5,8 @@ from datetime import datetime
 from abc import ABC, abstractmethod
 
 from ..models import MetricData
-from ..utils import logger, CircuitBreaker, RED, RESET
+from ..utils import logger, CircuitBreaker, RED, RESET, health_tracker
+from ..cache import cache
 
 # Global Circuit Breaker for the package
 cb = CircuitBreaker()
@@ -108,6 +109,7 @@ class BaseFetcher(ABC):
         self.metric_name = metric_name
         self.primary_url = config.get('primary')
         self.backup_source = config.get('backup')
+        self.ttl_minutes = config.get('ttl_minutes', 5) # Default 5 min TTL
 
     @abstractmethod
     def parse_primary(self, data: Any) -> float:
@@ -130,44 +132,80 @@ class BaseFetcher(ABC):
         Default implementation attempts primary historical query, 
         then falls back to latest value if history is unavailable.
         """
+        cache_key = f"{self.metric_name}_history_{days}"
+        cached_data = cache.get(cache_key, ttl_minutes=self.ttl_minutes)
+        if cached_data:
+            return cached_data
+
+        start_time = time.time()
         try:
             logger.info("Tier 1: Fetching history", metric=self.metric_name, days=days)
             # This expects subclasses to handle the historical URL/params
             data = SafeNetworkClient.get(self.primary_url)
-            return self.parse_history(data)
+            result = self.parse_history(data)
+            latency = (time.time() - start_time) * 1000
+            
+            if result:
+                health_tracker.log_attempt(self.metric_name, "primary", True, latency)
+                cache.set(cache_key, result)
+            return result
         except Exception as e:
+            latency = (time.time() - start_time) * 1000
+            health_tracker.log_attempt(self.metric_name, "primary", False, latency, str(e))
             logger.warning("Historical fetch failed, providing latest as proxy", metric=self.metric_name, error=str(e))
             latest = self.fetch()
             return [latest] if latest else []
 
     def fetch(self) -> Optional[MetricData]:
-        """Orchestrates the multi-tier retrieval process."""
+        """Orchestrates the multi-tier retrieval process with caching."""
+        cache_key = f"{self.metric_name}_latest"
+        cached_data = cache.get(cache_key, ttl_minutes=self.ttl_minutes)
+        if cached_data:
+            return cached_data
+
         if cb.is_available(f"primary_{self.metric_name}"):
+            start_time = time.time()
             try:
                 logger.info("Tier 1: Attempting primary", metric=self.metric_name)
                 data = SafeNetworkClient.get(self.primary_url)
                 value = self.parse_primary(data)
                 cb.report_success(f"primary_{self.metric_name}")
-                return MetricData(
+                
+                latency = (time.time() - start_time) * 1000
+                health_tracker.log_attempt(self.metric_name, "primary", True, latency)
+                
+                result = MetricData(
                     metric_name=self.metric_name,
                     value=value,
                     timestamp=datetime.now(),
                     source="primary"
                 )
+                cache.set(cache_key, result)
+                return result
             except Exception as e:
+                latency = (time.time() - start_time) * 1000
+                health_tracker.log_attempt(self.metric_name, "primary", False, latency, str(e))
                 logger.error("Primary failed", metric=self.metric_name, error=str(e))
                 cb.report_failure(f"primary_{self.metric_name}")
 
+        start_time = time.time()
         try:
             logger.info("Tier 2: Attempting backup", metric=self.metric_name)
             value = self.get_backup()
-            return MetricData(
+            latency = (time.time() - start_time) * 1000
+            health_tracker.log_attempt(self.metric_name, "backup", True, latency)
+            
+            result = MetricData(
                 metric_name=self.metric_name,
                 value=value,
                 timestamp=datetime.now(),
                 source="backup"
             )
+            cache.set(cache_key, result)
+            return result
         except Exception as e:
+            latency = (time.time() - start_time) * 1000
+            health_tracker.log_attempt(self.metric_name, "backup", False, latency, str(e))
             print(f"{RED}[CRITICAL] All sources failed for {self.metric_name}: {e}{RESET}")
             logger.critical("TOTAL FAILURE", metric=self.metric_name, error=str(e))
             return MetricData(

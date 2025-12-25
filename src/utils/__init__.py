@@ -34,56 +34,25 @@ class MaxRetriesExceeded(AppError): pass
 
 # Simple Circuit Breaker
 class CircuitBreaker:
-    """Manages service availability by tracking consecutive failures.
-    
-    The breaker transitions through three states:
-    - CLOSED: Service is healthy, calls are allowed.
-    - OPEN: Service has failed threshold times, calls are blocked.
-    - HALF-OPEN: Recovery timeout elapsed, testing one call.
-
-    Attributes:
-        failure_threshold (int): Attempts before opening the breaker.
-        recovery_timeout (int): Seconds to wait before transitioning to HALF-OPEN.
-    """
+    """Manages service availability by tracking consecutive failures."""
     def __init__(self, failure_threshold: int = 3, recovery_timeout: int = 300):
-        """Initializes the circuit breaker with custom thresholds.
-
-        Args:
-            failure_threshold: Defaults to 3.
-            recovery_timeout: Seconds to cooldown. Defaults to 300.
-        """
         self.failure_threshold = failure_threshold
         self.recovery_timeout = recovery_timeout
-        self.failures = {}  # {name: count}
-        self.last_failure_time = {}  # {name: timestamp}
-        self.state = {}  # {name: "CLOSED" | "OPEN" | "HALF-OPEN"}
+        self.failures = {}  
+        self.last_failure_time = {}  
+        self.state = {}  
 
     def is_available(self, name: str) -> bool:
-        """Checks if the named service is currently available.
-
-        Args:
-            name: Identifier for the service/endpoint.
-
-        Returns:
-            bool: True if allowed to proceed.
-        """
         state = self.state.get(name, "CLOSED")
         if state == "CLOSED":
             return True
-        
         last_fail = self.last_failure_time.get(name, 0)
         if time.time() - last_fail > self.recovery_timeout:
             self.state[name] = "HALF-OPEN"
             return True
-        
         return False
 
     def report_failure(self, name: str):
-        """Records a service failure and opens breaker if threshold met.
-
-        Args:
-            name: Identifier for the failed service.
-        """
         self.failures[name] = self.failures.get(name, 0) + 1
         if self.failures[name] >= self.failure_threshold:
             self.state[name] = "OPEN"
@@ -91,29 +60,11 @@ class CircuitBreaker:
             logger.error("Circuit breaker opened", name=name, state="OPEN")
 
     def report_success(self, name: str):
-        """Resets the failure counter and closes the breaker.
-
-        Args:
-            name: Identifier for the successful service.
-        """
         self.failures[name] = 0
         self.state[name] = "CLOSED"
 
-# Retry Decorator (Simplified version of tenacity/custom)
+# Retry Decorator
 def retry_with_backoff(max_attempts: int = 3, base_delay: int = 2, exceptions: tuple = (Exception,)):
-    """A decorator for implementing exponential backoff retry logic.
-
-    Args:
-        max_attempts: Number of total attempts before giving up.
-        base_delay: Initial wait time in seconds.
-        exceptions: Tuple of exception types to trigger a retry.
-
-    Returns:
-        Callable: The wrapped function with retry logic.
-
-    Raises:
-        MaxRetriesExceeded: If all attempts fail.
-    """
     def decorator(func: Callable):
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -133,3 +84,14 @@ def retry_with_backoff(max_attempts: int = 3, base_delay: int = 2, exceptions: t
             raise MaxRetriesExceeded(f"Max retries reached for {func.__name__}: {last_err}")
         return wrapper
     return decorator
+
+# Expose sub-modules
+from .health import health_tracker
+from .alerts import alert_manager
+
+__all__ = [
+    "logger", "RED", "RESET", "CircuitBreaker", "retry_with_backoff",
+    "AppError", "NetworkError", "TimeoutError", "ParseError", 
+    "RateLimitError", "AuthError", "MaxRetriesExceeded",
+    "health_tracker", "alert_manager"
+]

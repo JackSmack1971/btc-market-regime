@@ -5,7 +5,9 @@ from src.fetchers import FetcherFactory
 from src.analyzer import RegimeAnalyzer, calculate_regime, analyze_history, analyze_mtf
 from src.ui.layout import apply_custom_css, inject_google_fonts
 from src.ui.charts import plot_regime_history, plot_confluence_heatmap, plot_score_gauge
-from src.utils import logger
+from src.utils import logger, health_tracker, alert_manager
+from src.intelligence.forecaster import RegimeForecaster
+from src.backtesting.optimizer import BacktestOptimizer
 
 # Configuration
 SOURCES_PATH = "config/sources.yaml"
@@ -27,6 +29,19 @@ def load_sources():
     with open(SOURCES_PATH, 'r') as f:
         return yaml.safe_load(f)['sources']
 
+def play_regime_flip_audio():
+    """Injects a subtle audio alert via HTML."""
+    # Using a professional notification sound
+    sound_url = "https://assets.mixkit.co/active_storage/sfx/2861/2861-preview.mp3"
+    st.components.v1.html(
+        f"""
+        <audio autoplay style="display:none">
+            <source src="{sound_url}" type="audio/mpeg">
+        </audio>
+        """,
+        height=0
+    )
+
 # UI Entry Point
 def main():
     inject_google_fonts()
@@ -42,6 +57,17 @@ def main():
     st.sidebar.header("CONTROL CENTER")
     days_hist = st.sidebar.slider("Historical Range (Days)", 7, 60, 30)
     refresh = st.sidebar.button("REFRESH INTELLIGENCE", use_container_width=True)
+    
+    # API Health HUD
+    with st.sidebar.expander("🌐 API OPERATIONAL HEALTH"):
+        health_summary = health_tracker.get_latest_status()
+        if health_summary:
+            for metric, status in health_summary.items():
+                icon = "✅" if status['last_success'] else "❌"
+                st.markdown(f"{icon} **{metric.upper()}**")
+                st.caption(f"Source: {status['last_source']} | Latency: {status['last_latency']:.0f}ms")
+        else:
+            st.info("No active sessions. Refresh to see API health.")
 
     # Core Execution
     if refresh or 'metrics_map' not in st.session_state:
@@ -65,6 +91,22 @@ def main():
             st.session_state.snapshot = calculate_regime(scored_snapshot)
             st.session_state.mtf = analyze_mtf(metrics_map, analyzer)
             st.session_state.history = analyze_history(metrics_map, analyzer)
+            
+            # 🚨 Regime Flip Detection & Alerts
+            if 'previous_regime' in st.session_state:
+                prev = st.session_state.previous_regime
+                curr = st.session_state.snapshot['label']
+                if prev != curr:
+                    msg = f"🔔 *BTC REGIME FLIP DETECTED*\n\n"
+                    msg += f"**From**: `{prev}`\n"
+                    msg += f"**To**: `{curr}`\n\n"
+                    msg += f"Score: {st.session_state.snapshot['total_score']:.2f}\n"
+                    msg += f"Confidence: {st.session_state.snapshot['confidence']}"
+                    alert_manager.send_message(msg)
+                    st.toast(f"REGIME FLIP: {prev} -> {curr}", icon="🚨")
+                    play_regime_flip_audio()
+            
+            st.session_state.previous_regime = st.session_state.snapshot['label']
 
     # PAGE LAYOUT
     col1, col2, col3 = st.columns([1, 1, 1])
@@ -108,19 +150,69 @@ def main():
 
     st.plotly_chart(plot_regime_history(st.session_state.history, btc_prices), use_container_width=True)
 
-    # 5. Technical Logs
-    with st.expander("🛠️ TECHNICAL LOGS & AGENT REASONING"):
-        st.markdown("### RAW DATA STATUS")
-        for name, data in st.session_state.metrics_map.items():
-            status = "✅ SUCCESS" if data else "❌ FAILED"
-            st.write(f"- **{name.upper()}**: {status}")
+    # 4.1 EXPERIMENTAL FORECAST
+    if 'history' in st.session_state and st.session_state.history:
+        forecaster = RegimeForecaster(st.session_state.history)
+        forecaster.train()
         
-        st.markdown("### REASONING LOG")
-        st.code(f"""
+        if forecaster.is_trained:
+            with st.container():
+                st.markdown("### 🔮 EXPERIMENTAL FORECAST (Next 12 Hours)")
+                forecasts = forecaster.forecast(st.session_state.snapshot['total_score'])
+                forecast_df = pd.DataFrame(forecasts)
+                # Simple line chart for forecast
+                st.line_chart(forecast_df.set_index('timestamp'), y='projected_score')
+                st.caption("Forecast model: Linear Regression Projection (Experimental)")
+        else:
+            st.info("🔮 Forecast engine warming up. Accumulating more historical points for training...")
+
+    # 4.2 STRATEGY OPTIMIZER
+    with st.expander("🧪 STRATEGY OPTIMIZER (EXPERIMENTAL)"):
+        if 'history' in st.session_state and st.session_state.history:
+            st.markdown("Find the optimal mathematical weights for your metrics using Bayesian optimization.")
+            if st.button("RUN WEIGHT OPTIMIZATION", use_container_width=True):
+                with st.spinner("Optimizing weights via Optuna..."):
+                    optimizer = BacktestOptimizer(st.session_state.history, btc_prices)
+                    results = optimizer.run_optimization(n_trials=30)
+                    
+                    if results:
+                        st.success(f"Best Correlation Found: {results['best_value']:.4f}")
+                        st.markdown("### SUGGESTED WEIGHTS")
+                        st.json(results['best_params'])
+                        st.info("💡 Update `config/thresholds.yaml` with these values to improve regime accuracy.")
+        else:
+            st.info("Optimization requires active session history. Run a refresh first.")
+
+    # 5. Technical Logs & Explainability
+    with st.expander("🛠️ TECHNICAL LOGS & LOGIC EXPLAINABILITY"):
+        col_logs1, col_logs2 = st.columns([1, 1])
+        
+        with col_logs1:
+            st.markdown("### RAW DATA STATUS")
+            for name, data in st.session_state.metrics_map.items():
+                status = "✅ SUCCESS" if data else "❌ FAILED"
+                st.write(f"- **{name.upper()}**: {status}")
+        
+        with col_logs2:
+            st.markdown("### REASONING NARRATIVE")
+            score = res['total_score']
+            label = res['label']
+            
+            narrative = f"The Bitcoin market is currently in a **{label}** regime. "
+            if score > 3: narrative += "Signals are overwhelmingly bullish, suggesting high conviction in upward expansion."
+            elif score > 1: narrative += "Constructive signals dominate, though some resistance or consolidation is expected."
+            elif score > -1: narrative += "Conflicting data points suggest a neutral/range-bound environment."
+            elif score > -3: narrative += "Defensive signals are emerging; risk management is prioritized over aggression."
+            else: narrative += "Strong bearish confluence indicates broad market weakness and potential further contraction."
+            
+            st.info(narrative)
+            
+            st.markdown("### ENGINE METRICS")
+            st.code(f"""
 Engine Version: {res['engine_version']}
-Regime Logic: {res['label']} based on score {res['total_score']:.2f}
+Regime Logic: {res['label']} (Score: {res['total_score']:.2f})
 MTF Confluence: {st.session_state.mtf['confluence_score']}%
-        """, language="text")
+            """, language="text")
 
     # Footer
     st.markdown(f"**ENGINE V{st.session_state.snapshot['engine_version']}** | LAST SYNC: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
