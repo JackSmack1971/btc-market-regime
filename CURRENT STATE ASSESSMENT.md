@@ -2,37 +2,36 @@
 
 ## 1. System Identity
 - **Core Purpose**: High-fidelity BTC Market Regime Intelligence & Forecasting.
-- **Tech Stack**: Python 3.13, Streamlit (UI), Plotly (Charts), Scikit-learn (ML), Optuna (Optimization).
+- **Tech Stack**: Python 3.13, Streamlit (UI), aiohttp (Async), SQLite3 (Persistence), Scikit-learn (ML), Optuna (Optimization).
 - **Architecture Style**: **Async-First Modular Monolith**.
 
 ## 2. The Golden Path
-- **UI Entry Point**: `app.py` (Orchestrates `src/ui/dashboard.py`).
-- **Asset Acquisition**: `src/fetchers/` (Asynchronous, modular, factory-driven).
-- **Inference/Logic**: `src/analyzer.py` (Regime score calculation & MTF confluence).
-- **Persistence**: `src/persistence/` (**SQLite3-based**, ACID compliant).
-- **Feedback**: Sidebar HUD (API Health), Telegram Alert Bridge, and Logic Explainability.
+- **Entry Point**: `app.py` (Dashboard) / `main.py` (CLI Orchestrator).
+- **Key Abstractions**: 
+    - `FetcherFactory`: Dynamic modular retrieval.
+    - `BaseFetcher`: Graduated Fallback Protocol (Primary -> Backup -> Failed).
+    - `RegimeAnalyzer`: Strategy-based aggregate scoring & MTF confluence.
+    - `db_manager.py`: ACID-compliant SQLite caching layer.
 
 ## 3. Defcon Status
-- **Critical Risks**: ⚠️ Dependency on rate-limited public APIs. ⚠️ CLI (`main.py`) parity currently lagging (Fix in progress).
-- **Input Hygiene**: COMPLIANT. US-friendly endpoints utilized; centralized `SafeNetworkClient` (Async) for retries/timeouts.
-- **Dependency Health**: HEALTHY. Requirements updated for ML and Async support.
-- **Secrets**: SECURE. Environment variables utilized for Telegram keys.
+- **Critical Risks**: ⚠️ Upstream API rate limits (Mitigated via Circuit Breaker). ⚠️ Latency spikes from free-tier providers.
+- **Input Hygiene**: COMPLIANT. `SafeNetworkClient` (Async) handles retries/timeouts; no hardcoded secrets found.
+- **Dependency Health**: HEALTHY. Version 3.13 parity confirmed; minimal transitive footprint.
 
 ## 4. Structural Decay
-- **Complexity Hotspots**: 
-    - `src/analyzer.py`: Central scoring logic point (Potential candidate for Strategy Pattern).
-- **Abandoned Zones**: NONE. 
-- **Technical Debt**: Restoring CLI parity with the async engine is the current focus.
+- **Complexity Hotspots**:
+    - `src/analyzer.py` (232 lines): Orchestrates all scoring strategy routing.
+    - `main.py` (232 lines): Handles diverse CLI workflows (MTF, Historical, Snapshot).
+- **Abandoned Zones**: NONE. Legacy pickle caching (`.cache/`) is deprecated but accessible for migration reference.
 
 ## 5. Confidence Score: [0.95]
-- **Coverage Estimation**: 50-60% (Intelligence and Forecasting tests added).
-- **Missing Links**: Full end-to-end CLI regression suite.
+- **Coverage Estimation**: 55-65% (Unit tests for Fetchers, Intelligence, and Analysis present).
+- **Missing Links**: Full end-to-end integration suite for the Sidebar HUD alerting logic.
 
 ## 6. Agent Directives
 - **"Do Not Touch" List**: 
-    - `src/persistence/db_manager.py`: Core SQLite logic.
+    - `src/persistence/db_manager.py`: Core relational integrity.
     - `src/fetchers/base.py`: Core async retrieval logic.
 - **Refactor Priority**:
-    - [HIGH] Restore CLI parity (`main.py` async refactor).
-    - [MED] Implement Strategy Pattern for `RegimeAnalyzer`.
-    - [LOW] Expand ML forecasting horizons.
+    - [MEDIUM] Implement Strategy Pattern for specific indicator math in `analyzer.py`.
+    - [LOW] Expand forecasting horizons beyond 12-hour linear models.
