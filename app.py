@@ -51,27 +51,38 @@ def main():
     inject_google_fonts()
     apply_custom_css()
     
+    # Live Connection Beacon + Title
+    st.markdown('<span class="live-beacon"></span>', unsafe_allow_html=True)
     st.title("₿ BITCOIN REGIME INTELLIGENCE")
     st.markdown("---")
 
     sources_config = load_sources()
     analyzer = get_analyzer()
 
-    # Sidebar
-    st.sidebar.header("CONTROL CENTER")
+    # Sidebar: COMMAND LINK
+    st.sidebar.header("⚡ COMMAND LINK")
     days_hist = st.sidebar.slider("Historical Range (Days)", 7, 60, 30)
-    refresh = st.sidebar.button("REFRESH INTELLIGENCE", use_container_width=True)
+    refresh = st.sidebar.button("⟁ REFRESH INTELLIGENCE", use_container_width=True)
     
-    # API Health HUD
-    with st.sidebar.expander("🌐 API OPERATIONAL HEALTH"):
+    # API Health HUD (System Health Matrix)
+    with st.sidebar.expander("🌐 SYSTEM HEALTH", expanded=False):
         health_summary = health_tracker.get_latest_status()
         if health_summary:
+            # Horizontal chip layout
+            chips_html = '<div style="display: flex; flex-wrap: wrap; gap: 8px;">'
             for metric, status in health_summary.items():
-                icon = "✅" if status['last_success'] else "❌"
-                st.markdown(f"{icon} **{metric.upper()}**")
-                st.caption(f"Source: {status['last_source']} | Latency: {status['last_latency']:.0f}ms")
+                dot_class = "health-dot-success" if status['last_success'] else "health-dot-failure"
+                metric_abbr = metric[:3].upper()
+                chips_html += f'''
+                    <div class="health-chip">
+                        <div class="{dot_class}"></div>
+                        <span>{metric_abbr}</span>
+                    </div>
+                '''
+            chips_html += '</div>'
+            st.markdown(chips_html, unsafe_allow_html=True)
         else:
-            st.info("No active sessions. Refresh to see API health.")
+            st.info("No active sessions. Refresh to see system health.")
 
     # Core Execution (Async Orchestration)
     async def fetch_all_metrics():
@@ -149,7 +160,7 @@ def main():
             
             st.session_state.previous_regime = st.session_state.snapshot['label']
 
-    # PAGE LAYOUT
+    # PAGE LAYOUT (Mobile-Optimized for Telegram)
     from src.ui.dashboard import (
         render_kpi_section, 
         render_macro_thesis, 
@@ -160,16 +171,17 @@ def main():
         render_technical_logs
     )
 
-    col1, col2, col3 = st.columns([1, 1, 1])
+    # Mobile-First: Max 2 columns
+    col1, col2 = st.columns([1, 1])
 
     with col1:
         render_kpi_section(st.session_state.snapshot)
 
     with col2:
         render_macro_thesis(st.session_state.mtf)
-
-    with col3:
-        render_component_breakdown(st.session_state.snapshot['breakdown'])
+    
+    # Component Breakdown (Full Width)
+    render_component_breakdown(st.session_state.snapshot['breakdown'])
 
     # Anomaly Alert Banner
     if 'anomaly_alert' in st.session_state.snapshot:
@@ -188,7 +200,9 @@ def main():
 
     render_optimizer_section(st.session_state.history, st.session_state.metrics_map)
 
-    render_technical_logs(st.session_state.metrics_map, st.session_state.snapshot, st.session_state.mtf)
+    # Wrap Technical Logs in Expander (Telegram Mobile Optimization)
+    with st.expander("🔧 SYSTEM INTERNALS", expanded=False):
+        render_technical_logs(st.session_state.metrics_map, st.session_state.snapshot, st.session_state.mtf)
 
     # Footer
     st.markdown(f"**ENGINE V{st.session_state.snapshot['engine_version']}** | LAST SYNC: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
