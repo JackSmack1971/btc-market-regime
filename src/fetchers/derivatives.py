@@ -1,4 +1,5 @@
-from typing import Any, List
+import aiohttp
+from typing import Any, List, Optional
 from datetime import datetime
 from .base import BaseFetcher, SafeNetworkClient
 from ..models import MetricData
@@ -22,9 +23,9 @@ class FundingRateFetcher(BaseFetcher):
             for item in data
         ]
 
-    def get_backup(self) -> float:
+    async def get_backup(self, session: aiohttp.ClientSession) -> float:
         try:
-            data = SafeNetworkClient.get("https://api.coingecko.com/api/v3/derivatives")
+            data = await SafeNetworkClient.get(session, "https://api.coingecko.com/api/v3/derivatives")
             if not isinstance(data, list): return 0.0
             for item in data:
                 if item.get('index_id') == 'BTC':
@@ -54,9 +55,8 @@ class OpenInterestFetcher(BaseFetcher):
         return total_oi_btc
 
     def parse_history(self, data: Any) -> List[MetricData]:
-        # Coingecko aggregate OI doesn't support easy historical list in single call.
-        latest = self.fetch()
-        return [latest] if latest else []
+        # Proxy handled by BaseFetcher fallback
+        return []
 
-    def get_backup(self) -> float:
+    async def get_backup(self, session: aiohttp.ClientSession) -> float:
         return 0.0

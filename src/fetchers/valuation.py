@@ -1,5 +1,6 @@
+import aiohttp
 import pandas as pd
-from typing import Any, List
+from typing import Any, List, Optional
 from datetime import datetime
 from .base import BaseFetcher, SafeNetworkClient, logger
 from ..models import MetricData
@@ -24,13 +25,12 @@ class MVRVFetcher(BaseFetcher):
             for item in mvrv_data
         ]
 
-    def fetch_history(self, days: int) -> List[MetricData]:
-        # Implementation inherits super() and uses blockchain backup if primary lacks history params
-        return super().fetch_history(days)
+    async def fetch_history(self, session: aiohttp.ClientSession, days: int) -> List[MetricData]:
+        return await super().fetch_history(session, days)
 
-    def get_backup(self) -> float:
+    async def get_backup(self, session: aiohttp.ClientSession) -> float:
         try:
-            data = SafeNetworkClient.get(self.backup_source)
+            data = await SafeNetworkClient.get(session, self.backup_source)
             values = data.get('values')
             if not values or not isinstance(values, list): return 0.0
             return float(values[-1].get('y', 0.0))
@@ -61,9 +61,8 @@ class RSIDataFetcher(BaseFetcher):
 
     def parse_history(self, data: Any) -> List[MetricData]:
         # RSI history requires full 14d window per point.
-        # MVP: Return the latest RSI as a proxy for the series.
-        latest = self.fetch()
-        return [latest] if latest else []
+        # Fallback to empty list; BaseFetcher will use self.fetch() proxy on failure/empty.
+        return []
 
-    def get_backup(self) -> float:
+    async def get_backup(self, session: aiohttp.ClientSession) -> float:
         return 50.0

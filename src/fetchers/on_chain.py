@@ -1,3 +1,4 @@
+import aiohttp
 from typing import Any, List
 from datetime import datetime
 import time
@@ -24,17 +25,17 @@ class HashRateFetcher(BaseFetcher):
             for item in values
         ]
 
-    def fetch_history(self, days: int) -> List[MetricData]:
+    async def fetch_history(self, session: aiohttp.ClientSession, days: int) -> List[MetricData]:
         url = f"{self.primary_url}?timespan={days}days&format=json"
         try:
-            data = SafeNetworkClient.get(url)
+            data = await SafeNetworkClient.get(session, url)
             return self.parse_history(data)
         except Exception:
-            return super().fetch_history(days)
+            return await super().fetch_history(session, days)
 
-    def get_backup(self) -> float:
+    async def get_backup(self, session: aiohttp.ClientSession) -> float:
         try:
-            data = SafeNetworkClient.get(self.backup_source)
+            data = await SafeNetworkClient.get(session, self.backup_source)
             return 1.0 # Progress proxy logic
         except Exception:
             return 0.0
@@ -47,10 +48,10 @@ class ExchangeNetFlowsFetcher(BaseFetcher):
         return float(data.get('netflow', 0.0))
 
     def parse_history(self, data: Any) -> List[MetricData]:
-        # Netflows historical is tiered in CryptoQuant. proxy latest for now.
-        return [self.fetch()]
+        # Proxy handled by BaseFetcher fallback
+        return []
 
-    def get_backup(self) -> float:
+    async def get_backup(self, session: aiohttp.ClientSession) -> float:
         return 0.0
 
 class ActiveAddressFetcher(BaseFetcher):
@@ -73,17 +74,17 @@ class ActiveAddressFetcher(BaseFetcher):
             for item in values
         ]
 
-    def fetch_history(self, days: int) -> List[MetricData]:
+    async def fetch_history(self, session: aiohttp.ClientSession, days: int) -> List[MetricData]:
         url = f"{self.primary_url}?timespan={days}days&format=json"
         try:
-            data = SafeNetworkClient.get(url)
+            data = await SafeNetworkClient.get(session, url)
             return self.parse_history(data)
         except Exception:
-            return super().fetch_history(days)
+            return await super().fetch_history(session, days)
 
-    def get_backup(self) -> float:
+    async def get_backup(self, session: aiohttp.ClientSession) -> float:
         try:
-            data = SafeNetworkClient.get(self.backup_source)
+            data = await SafeNetworkClient.get(session, self.backup_source)
             txs = data.get('data', {}).get('transactions_24h')
             return float(txs or 0.0)
         except Exception:

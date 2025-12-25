@@ -1,7 +1,8 @@
+import aiohttp
 from typing import Any, List
 from datetime import datetime
 import time
-from .base import BaseFetcher, logger
+from .base import BaseFetcher, SafeNetworkClient, logger
 from ..models import MetricData
 
 class FearGreedFetcher(BaseFetcher):
@@ -24,14 +25,14 @@ class FearGreedFetcher(BaseFetcher):
             for item in fng_data
         ]
 
-    def fetch_history(self, days: int) -> List[MetricData]:
+    async def fetch_history(self, session: aiohttp.ClientSession, days: int) -> List[MetricData]:
         url = f"{self.primary_url}?limit={days}"
         try:
-            data = SafeNetworkClient.get(url)
+            data = await SafeNetworkClient.get(session, url)
             return self.parse_history(data)
         except Exception:
-            return super().fetch_history(days)
+            return await super().fetch_history(session, days)
 
-    def get_backup(self) -> float:
+    async def get_backup(self, session: aiohttp.ClientSession) -> float:
         logger.warning("Using volatility-based backup for Fear & Greed")
         return 50.0

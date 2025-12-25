@@ -1,37 +1,40 @@
-# Current State Assessment - Bitcoin Market Regime Analysis
+# CURRENT STATE ASSESSMENT - [2025-12-25]
 
 ## 1. System Identity
-- **Core Purpose**: Multi-tier market intelligence engine for determining Bitcoin's cyclical regime using on-chain and derivative metrics.
-- **Tech Stack**: Python 3.13, Pandas, Requests, Structlog, Tenacity, PyYAML.
-- **Architecture Style**: Factory Pattern fetchers with Graduated Fallback Protocol and Circuit Breakers.
+- **Core Purpose**: High-fidelity BTC Market Regime Intelligence & Forecasting.
+- **Tech Stack**: Python 3.13, Streamlit (UI), Plotly (Charts), Scikit-learn (ML), Optuna (Optimization).
+- **Architecture Style**: Clean Modular Monolith (Transitioning to Async-First).
 
 ## 2. The Golden Path
-- **Entry Point**: `main.py` (Orchestrates fetching & reporting)
-- **Key Abstractions**:
-  - `BaseFetcher`: Multi-tier fallback logic (Primary -> Backup -> Neutral).
-  - `RegimeAnalyzer`: Weighted scoring engine with confidence adjustment.
-  - `SafeNetworkClient`: Defensive networking wrapper.
+- **UI Entry Point**: `app.py`
+- **Asset Acquisition**: `src/fetchers/` (Modular package, factory-driven).
+- **Inference/Logic**: `src/analyzer.py` (Regime score calculation & MTF confluence).
+- **Persistence**: `.cache/` (Pickle-based, disk-bound).
+- **Feedback**: Sidebar HUD (API Health) & Logic Explainability (UI logs).
 
-## 3. Defcon Status: **STABLE**
-- **Critical Risks**: High dependency on external free-tier APIs (CoinGecko, Blockchain.info).
-- **Input Hygiene**: Strict JSON schema validation per endpoint; zero-division and empty-data protection in all fetchers.
-- **Dependency Health**: Up-to-date; minimal external dependencies (5 main packages).
+## 3. Defcon Status
+- **Critical Risks**: ⚠️ Dependency on rate-limited public APIs. ⚠️ Pickle-based cache volatility (addressed in ADR 001).
+- **Input Hygiene**: COMPLIANT. US-friendly endpoints utilized; centralized `SafeNetworkClient` for retries/timeouts.
+- **Dependency Health**: HEALTHY. Minimal pinned requirements; no vulnerabilities detected in transitive deps.
+- **Secrets**: SECURE. No hardcoded API keys or secrets detected in forensic scan.
 
 ## 4. Structural Decay
-- **Complexity Hotspots**: `fetchers.py` (238 lines) - contains all 8 fetcher implementations; Consider splitting into a `fetchers/` module as logic grows.
-- **Abandoned Zones**: None.
-- **Placeholders**:
-  - `fetchers.py:L49`: `your-api-key` for Alchemy (BTC RPC).
-  - `sources.yaml:L9`: Placeholder URL for CryptoQuant Primary.
+- **Complexity Hotspots**: 
+    - `app.py` (~180 lines): Managing UI layout, state, and engine triggers. Becoming dense.
+    - `src/analyzer.py`: Central scoring logic point.
+- **Abandoned Zones**: NONE. Codebase is fresh and recently refactored (Modularized Phase 2.1).
+- **Technical Debt**: ADR 001 identified `.pkl` caching as a risk to be replaced by SQLite.
 
-## 5. Confidence Score: **0.90**
-- **Coverage Estimation**: 
-  - **Contract/Integration**: 100% (11/11 endpoints verified via `api_contract_test.py`).
-  - **Unit**: ~60% (Scoring logic well-covered; individual fetcher edge cases primarily handled by contract tests).
-- **Missing Links**: Automated unit tests for simulated circuit-breaker recovery (verified manually).
+## 5. Confidence Score: [0.85]
+- **Coverage Estimation**: 35-45% (Contract, MTF, and Analysis tests present).
+- **Missing Links**: Integration tests for ML Forecaster and Backtest Optimizer.
+- **Hallucination Check**: Passed. All cited paths validated during scan.
 
 ## 6. Agent Directives
-- **Do Not Touch**: `SafeNetworkClient.get` (sensitive rate-limiting and UA settings).
+- **"Do Not Touch" List**: 
+    - `src/fetchers/base.py`: core logic for health tracking and caching.
+    - `src/models.py`: core data contracts.
 - **Refactor Priority**:
-  1. Split `fetchers.py` into individual classes in `src/fetchers/`.
-  2. Implement local CSV/Parquet caching to reduce API hits.
+    - [HIGH] Implement ADR 001 (Async + SQLite).
+    - [MED] Modularize `app.py` UI components into `src/ui/`.
+    - [LOW] Increase test coverage for `src/intelligence/`.

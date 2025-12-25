@@ -1,4 +1,5 @@
-import requests
+import aiohttp
+import asyncio
 import time
 from typing import Optional, Dict, Any, List
 from datetime import datetime
@@ -12,81 +13,47 @@ from ..cache import cache
 cb = CircuitBreaker()
 
 class SafeNetworkClient:
-    """Defensive networking wrapper with rate limiting and timeouts.
-    
-    This class ensures all external requests adhere to safe engineering
-    standards, including custom User-Agent headers, hard timeouts, and
-    forced rate limiting to avoid API bans.
-    """
+    """Defensive networking wrapper with rate limiting and timeouts (Async)."""
     USER_AGENT = "BitcoinRegimeAnalyzer/1.0 (Senior Engineering Edition)"
-    TIMEOUT = 5  # Hard 5-second timeout
+    TIMEOUT = 5 
 
     @staticmethod
-    def get(url: str, params: Optional[Dict] = None) -> Any:
-        """Performs a safe GET request with automatic rate limiting.
-
-        Args:
-            url: The endpoint to query.
-            params: Optional query parameters.
-
-        Returns:
-            Any: The JSON-decoded response body.
-
-        Raises:
-            requests.exceptions.RequestException: If the network call fails.
-        """
+    async def get(session: aiohttp.ClientSession, url: str, params: Optional[Dict] = None) -> Any:
+        """Performs a safe async GET request."""
         try:
             headers = {"User-Agent": SafeNetworkClient.USER_AGENT}
-            response = requests.get(url, headers=headers, params=params, timeout=SafeNetworkClient.TIMEOUT)
-            response.raise_for_status()
-            
-            # Rate limiting: 1s sleep after every successful call
-            time.sleep(1)
-            return response.json()
-        except requests.exceptions.RequestException as e:
-            logger.error("Network request failed", url=url, error=str(e))
+            async with session.get(url, headers=headers, params=params, timeout=SafeNetworkClient.TIMEOUT) as response:
+                response.raise_for_status()
+                # Rate limiting simulation: small pause
+                await asyncio.sleep(0.5) 
+                return await response.json()
+        except Exception as e:
+            logger.error("Async GET failed", url=url, error=str(e))
             raise
 
     @staticmethod
-    def post(url: str, json_data: Dict) -> Any:
-        """Performs a safe POST request.
-
-        Args:
-            url: The endpoint to query.
-            json_data: The dictionary to send as JSON payload.
-
-        Returns:
-            Any: The JSON-decoded response body.
-        """
+    async def post(session: aiohttp.ClientSession, url: str, json_data: Dict) -> Any:
+        """Performs a safe async POST request."""
         try:
             headers = {"User-Agent": SafeNetworkClient.USER_AGENT}
-            response = requests.post(url, headers=headers, json=json_data, timeout=SafeNetworkClient.TIMEOUT)
-            response.raise_for_status()
-            
-            time.sleep(1)
-            return response.json()
-        except requests.exceptions.RequestException as e:
-            logger.error("RPC request failed", url=url, error=str(e))
+            async with session.post(url, headers=headers, json=json_data, timeout=SafeNetworkClient.TIMEOUT) as response:
+                response.raise_for_status()
+                await asyncio.sleep(0.5)
+                return await response.json()
+        except Exception as e:
+            logger.error("Async POST failed", url=url, error=str(e))
             raise
 
-def alchemy_rpc(method: str, params: List = []) -> Any:
-    """Executes a Bitcoin JSON-RPC call via an Alchemy-compatible provider.
-
-    Args:
-        method: The RPC method name (e.g., 'getblockcount').
-        params: List of arguments for the RPC method.
-
-    Returns:
-        Any: The RPC response payload.
-    """
-    URL = "https://btc-mainnet.g.alchemy.com/v2/your-api-key" # Placeholder
+async def alchemy_rpc(session: aiohttp.ClientSession, method: str, params: List = []) -> Any:
+    """Executes a Bitcoin JSON-RPC call asychronously."""
+    URL = "https://btc-mainnet.g.alchemy.com/v2/your-api-key"
     payload = {
         "jsonrpc": "2.0",
         "id": 1,
         "method": method,
         "params": params
     }
-    return SafeNetworkClient.post(URL, payload)
+    return await SafeNetworkClient.post(session, URL, payload)
 
 class BaseFetcher(ABC):
     """Abstract base class for all metric data fetchers.
@@ -122,16 +89,12 @@ class BaseFetcher(ABC):
         pass
 
     @abstractmethod
-    def get_backup(self) -> float:
-        """Retrieves data from the backup source."""
+    async def get_backup(self, session: aiohttp.ClientSession) -> float:
+        """Retrieves data from the backup source asychronously."""
         pass
 
-    def fetch_history(self, days: int) -> List[MetricData]:
-        """Fetches historical data points.
-        
-        Default implementation attempts primary historical query, 
-        then falls back to latest value if history is unavailable.
-        """
+    async def fetch_history(self, session: aiohttp.ClientSession, days: int) -> List[MetricData]:
+        """Fetches historical data points asychronously."""
         cache_key = f"{self.metric_name}_history_{days}"
         cached_data = cache.get(cache_key, ttl_minutes=self.ttl_minutes)
         if cached_data:
@@ -139,9 +102,8 @@ class BaseFetcher(ABC):
 
         start_time = time.time()
         try:
-            logger.info("Tier 1: Fetching history", metric=self.metric_name, days=days)
-            # This expects subclasses to handle the historical URL/params
-            data = SafeNetworkClient.get(self.primary_url)
+            logger.info("Tier 1: Fetching history (Async)", metric=self.metric_name, days=days)
+            data = await SafeNetworkClient.get(session, self.primary_url)
             result = self.parse_history(data)
             latency = (time.time() - start_time) * 1000
             
@@ -152,12 +114,12 @@ class BaseFetcher(ABC):
         except Exception as e:
             latency = (time.time() - start_time) * 1000
             health_tracker.log_attempt(self.metric_name, "primary", False, latency, str(e))
-            logger.warning("Historical fetch failed, providing latest as proxy", metric=self.metric_name, error=str(e))
-            latest = self.fetch()
+            logger.warning("Historical fetch failed (Async), providing latest as proxy", metric=self.metric_name, error=str(e))
+            latest = await self.fetch(session)
             return [latest] if latest else []
 
-    def fetch(self) -> Optional[MetricData]:
-        """Orchestrates the multi-tier retrieval process with caching."""
+    async def fetch(self, session: aiohttp.ClientSession) -> Optional[MetricData]:
+        """Orchestrates the multi-tier retrieval process asychronously."""
         cache_key = f"{self.metric_name}_latest"
         cached_data = cache.get(cache_key, ttl_minutes=self.ttl_minutes)
         if cached_data:
@@ -166,8 +128,8 @@ class BaseFetcher(ABC):
         if cb.is_available(f"primary_{self.metric_name}"):
             start_time = time.time()
             try:
-                logger.info("Tier 1: Attempting primary", metric=self.metric_name)
-                data = SafeNetworkClient.get(self.primary_url)
+                logger.info("Tier 1: Attempting primary (Async)", metric=self.metric_name)
+                data = await SafeNetworkClient.get(session, self.primary_url)
                 value = self.parse_primary(data)
                 cb.report_success(f"primary_{self.metric_name}")
                 
@@ -185,13 +147,13 @@ class BaseFetcher(ABC):
             except Exception as e:
                 latency = (time.time() - start_time) * 1000
                 health_tracker.log_attempt(self.metric_name, "primary", False, latency, str(e))
-                logger.error("Primary failed", metric=self.metric_name, error=str(e))
+                logger.error("Primary failed (Async)", metric=self.metric_name, error=str(e))
                 cb.report_failure(f"primary_{self.metric_name}")
 
         start_time = time.time()
         try:
-            logger.info("Tier 2: Attempting backup", metric=self.metric_name)
-            value = self.get_backup()
+            logger.info("Tier 2: Attempting backup (Async)", metric=self.metric_name)
+            value = await self.get_backup(session)
             latency = (time.time() - start_time) * 1000
             health_tracker.log_attempt(self.metric_name, "backup", True, latency)
             
@@ -207,7 +169,7 @@ class BaseFetcher(ABC):
             latency = (time.time() - start_time) * 1000
             health_tracker.log_attempt(self.metric_name, "backup", False, latency, str(e))
             print(f"{RED}[CRITICAL] All sources failed for {self.metric_name}: {e}{RESET}")
-            logger.critical("TOTAL FAILURE", metric=self.metric_name, error=str(e))
+            logger.critical("TOTAL FAILURE (Async)", metric=self.metric_name, error=str(e))
             return MetricData(
                 metric_name=self.metric_name,
                 value=0.0,

@@ -50,13 +50,12 @@ def generate_mock_history(days=30):
         history = []
         for i, val in enumerate(values):
             ts = start_time + timedelta(days=i)
-            # Create MetricData format (raw dict as expected by pkl reader)
-            history.append({
-                "metric_name": name,
-                "value": float(val),
-                "timestamp": ts,
-                "source": "factory"
-            })
+            history.append(MetricData(
+                metric_name=name,
+                value=float(val),
+                timestamp=ts,
+                source="factory"
+            ))
         
         # Save History
         history_key = f"{name}_history_{days}"
