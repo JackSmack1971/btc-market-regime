@@ -42,21 +42,21 @@
 
 ## 🎯 PRIORITIZED ROADMAP
 
-### **PHASE 2.1: Architecture Refinement** (Effort: 2-3 days | Impact: HIGH)
+### **PHASE 2.1: Architecture & Performance** (Effort: 3-4 days | Impact: HIGH)
 
-#### P0 - Critical Refactoring
+#### P0 - Foundation & Speed
 
-**1. Modularize Fetchers** ⚡ **HIGH IMPACT**
-```
-Current: src/fetchers.py (297 lines)
-Target:  src/fetchers/
-         ├── __init__.py
-         ├── base.py          # BaseFetcher, SafeNetworkClient
-         ├── sentiment.py     # FearGreedFetcher
-         ├── on_chain.py      # HashRateFetcher, ActiveAddressesFetcher
-         ├── derivatives.py   # FundingRateFetcher, OpenInterestFetcher
-         └── valuation.py     # MVRVFetcher, RSIFetcher
-```
+**1. Modularize Fetchers** ⚡ **STABILITY**
+- Refactor monolithic `fetchers.py` into specialized modules.
+- Ensure isolation and parallel execution safety.
+
+**2. Implement Caching Layer** ⚡ **LATENCY REDUCTION**
+- Reduce UI refresh time from 5-8s to <1s for repetitive views.
+- Implement disk-based TTL caching to protect API budgets.
+
+**3. API Health & Budget HUD** 🛠️ **OPERATIONAL VISIBILITY**
+- Visual status indicator for all data dependencies.
+- Tracking of rate limits and fetch success rates.
 
 **Benefits**:
 - Reduces cognitive load (100-150 lines per file vs 297)
@@ -429,24 +429,21 @@ with col1:
 
 ---
 
-### **PHASE 2.3: UX/UI Enhancements** (Effort: 3-4 days | Impact: MEDIUM-HIGH)
+### **PHASE 2.3: Operational Logic & Alerts** (Effort: 3-4 days | Impact: HIGH)
 
-#### P1 - Visual & Functional Polish
+#### P1 - Trust & Proactivity
 
-**7. Tooltip & Jargon Bridge** 📖
+**7. Logic Explainability Engine** 🧠 **QUANT TRUST**
+- [NEW] Text-based "Reasoning Log" explaining *why* the regime flipped.
+- Translate mathematical weights into human-readable market narratives.
 
-**Objective**: Provide instant context for technical metrics without cluttering the UI.
+**8. Telegram Alert Bridge** 🔔 **ACTIONABLE SPEED**
+- [MOVED UP] Proactive regime change notifications to mobile.
+- Zero-friction monitoring for the Active Trader.
 
-```python
-METRIC_TOOLTIPS = {
-    "fear_greed_index": "😨 Fear & Greed Index: Measures market sentiment. <30 = Extreme Fear (buy signal), >70 = Extreme Greed (caution).",
-    "hash_rate": "⚙️ Hash Rate: Mining power securing the network. Rising = bullish (miners confident), Falling = bearish.",
-    "mvrv_ratio": "📈 MVRV Ratio: Market Cap ÷ Realized Cap. <1 = Undervalued, >3 = Overvalued.",
-    # ... add all 8 metrics
-}
-```
-
----
+**9. Score Magnitude Gauge** 📊 **VISUAL CONTEXT**
+- Semi-circular gauge showing strength of the current regime.
+- Colored zones (Aggressive/Conservative/Risk-Off).
 
 **8. Enhanced Score Visualization** 📊
 
@@ -1046,10 +1043,12 @@ options_skew:
 |------|---------------|--------|--------------|----------|
 | **1. Modularize Fetchers** | 1-2 | HIGH | None | **P0** |
 | **2. Caching Layer** | 2-3 | VERY HIGH | None | **P0** |
+| **3. API Health HUD** | 1 | MEDIUM | Caching | **P1** |
+| **7. Logic Explainability** | 2 | HIGH | Modularization | **P1** |
+| **8. Telegram Alerts** | 1-2 | HIGH | None | **P1** |
 | **4. Regime Forecasting (Exp)** | 5-7 | HIGH | Modularization | **P1** |
-| **7. Tooltips & UX Polish** | 1 | MEDIUM | None | **P1** |
-| **8. Score Gauge Visualization** | 1 | MEDIUM | None | **P1** |
-| **11. Alert System (Telegram)** | 2-3 | HIGH | None | **P2** |
+| **9. Score Gauge** | 1 | MEDIUM | None | **P1** |
+| **11. Visual Notifications** | 1 | MEDIUM | None | **P2** |
 | **12. Backtest Optimizer** | 4-6 | HIGH | Historical Data | **P2** |
 | **15. Volatility Metrics** | 2-3 | MEDIUM | Modularization | **P3** |
 
