@@ -25,7 +25,7 @@ Built for resilience and accuracy. This tool uses a **Multi-Tier Fallback Protoc
 
 ### Prerequisites
 - Python 3.12+
-- aiohttp, scikit-learn, optuna, statsmodels (see requirements.txt)
+- aiohttp, scikit-learn, optuna, statsmodels, python-dotenv (see requirements.txt)
 
 ### Setup
 1. **Clone the repository**:
@@ -39,8 +39,10 @@ Built for resilience and accuracy. This tool uses a **Multi-Tier Fallback Protoc
    pip install -r requirements.txt
    ```
 
-3. **Configure API Keys (Optional)**:
-   Edit `config/sources.yaml` to add your CryptoQuant or Alchemy keys if available.
+3. **Configure API Keys & Alerts**:
+   - Create a `.env` file in the root directory.
+   - Add `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` for market regime alerts.
+   - Edit `config/sources.yaml` to add your CryptoQuant or Alchemy keys if available.
 
 ## ⚡ Usage
 

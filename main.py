@@ -5,12 +5,19 @@ import json
 import argparse
 import asyncio
 import aiohttp
+import os
+from dotenv import load_dotenv
 from typing import List, Dict, Any
 from datetime import datetime
 from src.fetchers import FetcherFactory
 from src.analyzer import RegimeAnalyzer, calculate_regime, analyze_history
 from src.models import ScoredMetric
 from src.utils import logger, RED, RESET
+from src.alerts import TelegramNotifier, AlertLevel
+from src.persistence.db_manager import db_manager
+
+# Load environment variables from .env
+load_dotenv()
 
 GREEN = "\033[92m"
 YELLOW = "\033[93m"
@@ -33,6 +40,14 @@ class MarketRegimeCLI:
         with open(sources_path, 'r') as f:
             self.sources_config = yaml.safe_load(f)['sources']
         self.analyzer = RegimeAnalyzer(thresholds_path)
+        
+        # Initialize Notifier
+        self.notifier = None
+        bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
+        chat_id = os.getenv("TELEGRAM_CHAT_ID")
+        if bot_token and chat_id:
+            self.notifier = TelegramNotifier(bot_token, chat_id)
+            logger.info("Telegram notifier initialized")
 
     async def run(self, args):
         """Executes the analysis workflow based on arguments."""
@@ -68,11 +83,36 @@ class MarketRegimeCLI:
             return
 
         analysis = calculate_regime(scored_metrics)
+        
+        # Transition Detection
+        await self.check_alerts(analysis)
+
         if as_json:
             # Handle datetime serialization for JSON
             print(json.dumps(analysis, indent=2, default=str))
         else:
             self.display_report(analysis)
+
+    async def check_alerts(self, current_analysis: Dict[str, Any]):
+        """Detects regime transitions and triggers notifications."""
+        if not self.notifier:
+            return
+
+        current_regime = current_analysis.get('label')
+        # Retrieve last regime from cache
+        last_data = db_manager.get_cache("last_market_regime")
+        last_regime = last_data['value'] if last_data else "UNKNOWN"
+
+        if current_regime != last_regime:
+            logger.info("Regime transition detected", prev=last_regime, current=current_regime)
+            message = (
+                f"Market Regime changed from *{last_regime}* to *{current_regime}*.\n"
+                f"Current Score: {current_analysis.get('total_score')}\n"
+                f"Confidence: {current_analysis.get('confidence')}"
+            )
+            await self.notifier.send(message, level=AlertLevel.ALERT)
+            # Update cache
+            db_manager.set_cache("last_market_regime", current_regime)
 
     async def run_historical(self, session: aiohttp.ClientSession, days: int, export_path: str = None):
         print(f"\n{BOLD}### HISTORICAL REGIME ANALYSIS ({days} DAYS) ###{RESET}")

@@ -24,8 +24,8 @@
     - `main.py` (232 lines): Handles diverse CLI workflows (MTF, Historical, Snapshot).
 - **Abandoned Zones**: NONE. Legacy pickle caching (`.cache/`) is deprecated but accessible for migration reference.
 
-## 5. Confidence Score: [0.95]
-- **Coverage Estimation**: 55-65% (Unit tests for Fetchers, Intelligence, and Analysis present).
+## 5. Confidence Score: [0.97]
+- **Coverage Estimation**: 60-70% (Alerting and transition tests added).
 - **Missing Links**: Full end-to-end integration suite for the Sidebar HUD alerting logic.
 
 ## 6. Agent Directives
