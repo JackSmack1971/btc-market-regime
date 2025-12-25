@@ -47,7 +47,13 @@ Run the main analysis engine to see the current market regime:
 python main.py
 ```
 
-### Advanced Options
+### Dashboard (GUI)
+Launch the interactive Cyber-Noir dashboard:
+```bash
+streamlit run app.py
+```
+
+### Advanced Options (CLI)
 - **JSON Output**: `python main.py --json` (Ideal for piping to scripts or monitoring tools)
 - **Historical Backtest**: `python main.py --days 30 --export results.csv` (Analyze and export time-series data)
 - **MTF Confluence**: `python main.py --mtf` (Fractal analysis: Daily, Weekly, Monthly alignment)

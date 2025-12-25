@@ -1,50 +1,49 @@
-# UX Audit Report: Bitcoin Market Regime Analysis
+# UX Audit Report: BTC Market Regime Dashboard
 
-## 1. Persona Profiles & Mental Models
+**Audit Date**: 2025-12-25
+**Scope**: Interactive Dashboard (v1.0) & MTF Confluence Engine
 
-### 👤 The Crypto Quant (Alex)
-- **Mental Model:** "I need raw, high-fidelity data to integrate into my Python workflow."
-- **Expected Outcome:** Machine-readable output (JSON) and historical backfill capabilities.
+## 1. Persona Analysis
 
-### 👤 The Passive Investor (Sarah)
-- **Mental Model:** "I want to know the market sentiment without being an expert in on-chain logic."
-- **Expected Outcome:** High signal-to-noise ratio, clear actionable verdict, and minimal jargon.
+| Persona | Archetype | Primary Need |
+| :--- | :--- | :--- |
+| **Novice Nina** | Casual HODLer | "Tell me if I should panic or buy more." |
+| **Quant Alex** | Active Trader | "Show me the math and the raw data sources." |
+| **Macro Marco** | Cycle Investor | "Are the daily fluctuations aligned with the monthly trend?" |
 
-### 👤 The Reliability Engineer (Marco)
-- **Mental Model:** "I need to ensure this script runs in a headless environment with clean logs."
-- **Expected Outcome:** Separation of data (STDOUT) and logs (STDERR), easy configuration, and resilient error recovery.
+## 2. Cognitive Walkthroughs
 
----
+### Novice Nina
+- **Mental Model**: Expects a "Green = Good", "Red = Bad" interface.
+- **Friction**:
+  - The term "MVRV Ratio" and "Funding Rates" in the breakdown table are opaque.
+  - The "Total Score" (e.g. 4.21) lacks context—is that out of 10? Out of 100?
+  - **Missing Connection**: Needs a "Why this matters" tooltip or simple explanation.
 
-## 2. Friction Analysis (Implementation vs. Mental Model)
+### Quant Alex
+- **Mental Model**: Needs to audit the tool's reasoning.
+- **Friction**:
+  - The dashboard caches results, but he wants to know *exactly* when the last fetch occurred.
+  - The historical chart shows the score, but not the underlying raw values (Price vs Score overlay).
+  - **Feedback Loop**: He wants a way to see "Raw Logs" for the fetcher to verify backup tier usage.
 
-| Friction Point | Persona Affected | Conflict Description |
-|----------------|-------------------|----------------------|
-| **Log Interleaving** | Admin (Marco) | Structured JSON logs are currently printed alongside ASCII tables on STDOUT, making it difficult to pipe/parse data. |
-| **Jargon Wall** | Novice (Sarah) | "MVRV", "Hash Rate", and "Open Interest" are shown without context. A non-technical user feels overwhelmed by the metric table. |
-| **Static Output** | Quant (Alex) | The output is purely visual. There is no flag to request JSON format or specific metrics, forcing manual reading. |
-| **Verdict Obscurity** | Novice (Sarah) | The "Final Regime" verdict (the most important info) is at the very bottom, appearing secondary to the large table of raw data. |
+### Macro Marco
+- **Mental Model**: Looking for fractal alignment.
+- **Friction**:
+  - The "Macro Thesis" is a text box, but the individual alignments (Daily vs Weekly vs Monthly) are in separate chunks.
+  - He has to scroll to see the historical chart after reading the thesis.
+  - **Visual Gap**: A "Confluence Gauge" or Radar chart would communicate alignment faster than a bar chart.
 
----
+## 3. Top Friction Points
 
----
+1. **Jargon Barrier**: Metric names are technically accurate but cognitively heavy for non-quants.
+2. **Score Ambiguity**: Magnitude of the "Total Score" is undefined visually (needs a range indicator).
+3. **Data Freshness**: Cache indicators are present but secondary; Alex wants more prominent fetch timestamps.
+4. **Visual Hierarchy**: The "Macro Thesis" (the most valuable output for Marco) is secondary to the KPI cards.
 
-## 4. Post-Refinement Audit: Progress & Secondary Friction
+## 4. Proposed Improvement Tasks
 
-### ✅ Progress (Resolved Friction)
-- **Log/Logic Separation:** Marco can now pipe STDOUT to databases without parsing logic logs.
-- **Visual Hierarchy:** Sarah immediately notes the "SIDEWAYS/TRANSITIONAL" verdict in yellow at the top.
-- **Machine Format:** Alex has 1-click access to the full analysis via `--json`.
-
-### ⚠️ Secondary Friction (Audit 2)
-- **Temporal Blindness:** The `--json` output lacks a `timestamp` field. Alex needs to know *at what exact moment* the analysis was frozen.
-- **Configuration Ghosts:** When using custom `--sources`, there is no explicit confirmation on STDOUT/STDERR about which configuration file was successfully parsed.
-- **Failure Transparency:** Sarah sees "Confidence: MEDIUM" but doesn't intuitively know this is due to a primary API failure (fallback in effect).
-
-## 5. Next-Level Polish Roadmap (Recommended)
-- [ ] **Analysis Metadata:** Add `timestamp` and `engine_version` to both JSON and Table outputs.
-- [ ] **Config Traceability:** Emit a "Loading config from [path]" log on STDERR at startup.
-- [ ] **Resilience Indicators:** Add a `[*]` or `[FALLBACK]` marker in the ASCII table next to metrics where the primary source failed.
-
----
-**Final Verdict (Audit 2):** The tool has transitioned from a "Developer Script" to a **"Professional CLI Utility."** It is now stable, resilient, and persona-aligned.
+- [ ] **Task 1**: Add metric descriptions (tooltips) using `st.help` or expanders.
+- [ ] **Task 2**: Implement a "Score Gauge" (0-10 or -5 to +5 scale) instead of a simple metric.
+- [ ] **Task 3**: Overlay BTC Price on the Historical Regime Chart for better correlations.
+- [ ] **Task 4**: Add a "Technical Logs" expander for Quant Alex (showing primary vs backup success).
