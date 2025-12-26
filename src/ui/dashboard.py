@@ -116,18 +116,20 @@ def render_macro_thesis(mtf: Dict[str, Any]):
     st.plotly_chart(plot_confluence_heatmap(mtf), use_container_width=True)
 
 def render_component_breakdown(breakdown: List[Dict[str, Any]]):
-    """Renders the individual indicator breakdown table with high-frequency auto-refresh."""
-    st.markdown("### COMPONENT BREAKDOWN")
+    """
+    Renders the individual indicator breakdown table with high-frequency auto-refresh.
+    Uses Bento Box 4-column grid for high-density display.
+    """
+    if not breakdown:
+        st.info("No indicator data available yet.")
+        return
     
-    # High-frequency fragment for Top 8 Indicators (10Hz updates)
+    st.markdown("### 📊 COMPONENT BREAKDOWN")
+    
+    # High-frequency fragment for auto-refresh
     @st.fragment(run_every="0.1s")
     def render_indicators_table():
         """Auto-refreshing HTML table for Top 8 Indicators."""
-        if not breakdown:
-            st.info("No indicator data available")
-            return
-        
-        # Build HTML table with Finance Green/Bloomberg Red styling
         html = """
         <style>
         .indicators-table {
