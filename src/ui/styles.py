@@ -9,6 +9,7 @@ def inject_bloomberg_styles():
             --finance-green: #4AF6C3;
             --finance-green-rgb: 74, 246, 195;
             --bloomberg-red: #FF433D;
+            --trust-blue: #007ACC;
             --structural-border: #3E3E42;
             --background-void: #121212;
             --ui-text-primary: #E0E0E0;
@@ -28,6 +29,13 @@ def inject_bloomberg_styles():
         }
         
         /* Ensure Material Symbols are NEVER overridden by Inter */
+        /* Structural Headers use Trust Blue */
+        h1, h2, h3, [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2 {
+            color: var(--trust-blue) !important;
+            letter-spacing: -0.02em;
+            text-transform: uppercase;
+        }
+
         .material-symbols-rounded,
         [data-testid="stExpanderIcon"] {
             font-family: 'Material Symbols Rounded' !important;
@@ -42,8 +50,72 @@ def inject_bloomberg_styles():
         .price-value,
         .indicator-value,
         .ticker-tape,
-        .order-book-data {
+        .order-book-data,
+        .health-chip span {
             font-family: 'JetBrains Mono', monospace !important;
+            font-size: 0.75rem;
+            color: var(--ui-text-secondary);
+        }
+
+        /* ========== SENTIMENT COMMAND SUITE ========== */
+        .sentiment-feed-container {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            margin-top: 10px;
+        }
+
+        .sentiment-card {
+            background: #1E1E1E !important;
+            border-left: 2px solid var(--trust-blue);
+            padding: 8px 12px !important;
+            margin-bottom: 0px !important;
+            transition: all 0.2s ease;
+        }
+
+        .sentiment-card:hover {
+            background: #252525 !important;
+        }
+
+        .sentiment-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .sentiment-author {
+            font-weight: 700;
+            font-size: 0.8rem;
+            color: var(--trust-blue);
+        }
+
+        .sentiment-time {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            opacity: 0.5;
+        }
+
+        .sentiment-body {
+            font-size: 0.85rem;
+            line-height: 1.3;
+            color: var(--ui-text-primary);
+        }
+
+        .sentiment-status {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            font-size: 0.75rem;
+            margin-top: 4px;
+        }
+        
+        /* Priority Hiding for Sentiment */
+        @media (max-width: 600px) {
+            .sentiment-body {
+                display: none;
+            }
+            .sentiment-card {
+                padding: 4px 8px !important;
+            }
         }
 
         /* 2) Enforce tabular-nums and lining-nums for all numerical displays */
@@ -51,6 +123,7 @@ def inject_bloomberg_styles():
         html, body, * {
             font-variant-numeric: tabular-nums lining-nums !important;
             font-feature-settings: "tnum" 1, "lnum" 1 !important;
+            -webkit-font-smoothing: antialiased;
         }
 
         /* 3) Tri-Layer Hierarchy (Visual Layering) */
@@ -82,6 +155,36 @@ def inject_bloomberg_styles():
             font-feature-settings: "tnum" 1, "lnum" 1 !important;
         }
         
+        /* ========== BENTO BOX ARCHITECTURE ========== */
+        .bento-card {
+            background: #1E1E1E !important;
+            border: 1px solid var(--structural-border) !important;
+            border-radius: 4px !important;
+            padding: 12px !important;
+            margin-bottom: 8px !important;
+            transition: border-color 0.2s ease;
+        }
+
+        .bento-card:hover {
+            border-color: var(--trust-blue) !important;
+        }
+
+        /* Force Zero Padding for Columns (High Density) */
+        [data-testid="column"] {
+            padding: 0 !important;
+        }
+
+        /* Refine Vertical White Space */
+        .block-container {
+            padding-top: 1rem !important;
+            padding-bottom: 1rem !important;
+        }
+        
+        /* Indicators Table Density */
+        .indicators-table td {
+            padding: 4px 8px !important;
+        }
+
         /* 3) Fixed min-width on metric containers to prevent layout jitter */
         [data-testid="stMetric"] {
             min-width: 200px;

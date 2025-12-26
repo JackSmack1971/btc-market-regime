@@ -124,7 +124,7 @@ def render_component_breakdown(breakdown: List[Dict[str, Any]]):
         st.info("No indicator data available yet.")
         return
     
-    st.markdown("### 📊 COMPONENT BREAKDOWN")
+    st.markdown("### 📊 QUANTITATIVE SCORING")
     
     # High-frequency fragment for auto-refresh (0.5s synchronization)
     @st.fragment(run_every="0.5s")
@@ -184,7 +184,7 @@ def render_component_breakdown(breakdown: List[Dict[str, Any]]):
         }
         
         .indicators-table td {
-            padding: 10px 16px;
+            padding: 4px 8px;
             border-bottom: 1px solid rgba(69, 162, 158, 0.2);
             vertical-align: middle;
             white-space: nowrap;
@@ -294,8 +294,8 @@ def render_component_breakdown(breakdown: List[Dict[str, Any]]):
             # Header: INDICATOR | SCORE | RAW VALUE | CONFIDENCE
             html += f"""
                 <tr class="{priority_class}">
-                    <td class="indicator-label background-layer col-priority-1">{metric_name}</td>
-                    <td class="indicator-value primary-layer {momentum_class} col-priority-1">{momentum_symbol} {score:.2f}</td>
+                    <td class="indicator-label background-layer">{metric_name}</td>
+                    <td class="indicator-value primary-layer {momentum_class}">{momentum_symbol} {score:.2f}</td>
                     <td class="indicator-value secondary-layer col-priority-2">{raw_value_str}</td>
                     <td class="indicator-value background-layer {confidence_class} col-priority-3">{confidence}</td>
                 </tr>
@@ -739,11 +739,26 @@ def render_backtest_table(backtest_results: List[Dict[str, Any]], current_regime
     
     st.html(html)
 
+@st.fragment(run_every="0.1s")
 def render_ticker_tape(snapshot: Dict[str, Any]):
     """Renders a high-frequency ticker tape with JetBrains Mono and tabular alignment."""
-    score = snapshot.get('score', 0.0)
-    label = snapshot.get('label', 'UNKNOWN')
+    import time
     
+    current_snapshot = st.session_state.get('snapshot', snapshot)
+    score = current_snapshot.get('score', 0.0)
+    label = current_snapshot.get('label', 'UNKNOWN')
+    
+    # Visual Flash Throttling (Cap @ 1Hz per WCAG)
+    flash_class = ""
+    current_time = time.time()
+    last_flash = st.session_state.get('last_ticker_flash', 0.0)
+    prev_label = st.session_state.get('prev_ticker_label', label)
+    
+    if prev_label != label and (current_time - last_flash) >= 1.0:
+        flash_class = "ticker-flash"
+        st.session_state.last_ticker_flash = current_time
+        st.session_state.prev_ticker_label = label
+
     st.html(f"""
         <style>
         .ticker-tape-container {{
@@ -753,6 +768,11 @@ def render_ticker_tape(snapshot: Dict[str, Any]):
             border-bottom: 1px solid var(--structural-border);
             padding: 4px 0;
             white-space: nowrap;
+            transition: background-color 300ms ease-out;
+        }}
+        
+        .ticker-tape-container.ticker-flash {{
+            background-color: rgba(var(--finance-green-rgb), 0.2);
         }}
         
         .ticker-tape {{
@@ -784,7 +804,7 @@ def render_ticker_tape(snapshot: Dict[str, Any]):
             font-weight: 700;
         }}
         </style>
-        <div class="ticker-tape-container">
+        <div class="ticker-tape-container {flash_class}">
             <div class="ticker-tape">
                 <span class="ticker-item"><span class="ticker-label">REGIME:</span><span class="ticker-value">{label}</span></span>
                 <span class="ticker-item"><span class="ticker-label">SCORE:</span><span class="ticker-value">{score:.2f}</span></span>
@@ -877,3 +897,250 @@ def render_technical_logs(metrics_map: Dict[str, Any], snapshot: Dict[str, Any],
                 st.markdown(f"• {item}")
             
             st.caption(f"Engine Version: {snapshot.get('engine_version', '1.0.0')} | Confluence: {mtf.get('confluence_score', 0)}%")
+
+@st.fragment(run_every="5s")
+def render_sentiment_feed(social_manager):
+    """Renders a high-density institutional sentiment feed with fragmented isolation."""
+    latest_msgs = social_manager.get_latest(5)
+    
+    if not latest_msgs:
+        # Use Trust Blue for loading state
+        st.markdown('<div style="color: var(--trust-blue); font-family: JetBrains Mono; font-size: 0.8rem;">SCANNING SOCIAL BRIDGE...</div>', unsafe_allow_html=True)
+        return
+        
+    html = '<div class="sentiment-feed-container">'
+    for msg in latest_msgs:
+        # Double-encoding for sentiment status
+        score = msg.get('score', 'NEUTRAL')
+        if score == "BULLISH":
+            status_html = f'<span style="color: var(--finance-green)">BULLISH ↑</span>'
+        elif score == "BEARISH":
+            status_html = f'<span style="color: var(--bloomberg-red)">BEARISH ↓</span>'
+        else:
+            status_html = f'<span style="color: var(--trust-blue)">NEUTRAL</span>'
+            
+        html += f'''
+            <div class="sentiment-card">
+                <div class="sentiment-header">
+                    <span class="sentiment-author">{msg['author']}</span>
+                    <span class="sentiment-time">{msg['timestamp']}</span>
+                </div>
+                <div class="sentiment-body">{msg['text']}</div>
+                <div class="sentiment-status">{status_html}</div>
+            </div>
+        '''
+    html += '</div>'
+    st.html(html)
+@st.fragment(run_every="60s")
+def render_fear_greed_widget(sentiment_manager):
+    """Renders the Fear & Greed Index as a high-density institutional widget."""
+    latest = sentiment_manager.get_latest()
+    
+    # Visual Layering: Label recedes at 60% Grey
+    st.markdown('<div class="background-layer" style="font-size: 0.75rem; margin-bottom: 4px;">FEAR & GREED INDEX</div>', unsafe_allow_html=True)
+    
+    if not latest:
+        st.markdown('<div class="indicator-value" style="color: var(--trust-blue);">SCANNING...</div>', unsafe_allow_html=True)
+        return
+        
+    val = latest.value
+    # Urgency Palette Mapping
+    if val <= 25:
+        sentiment_label = "EXTREME FEAR"
+        sentiment_color = "var(--bloomberg-red)"
+    elif val < 45:
+        sentiment_label = "FEAR"
+        sentiment_color = "#FFA500" # Orange
+    elif val <= 55:
+        sentiment_label = "NEUTRAL"
+        sentiment_color = "var(--trust-blue)"
+    elif val <= 75:
+        sentiment_label = "GREED"
+        sentiment_color = "#90EE90" # Light Green
+    else:
+        sentiment_label = "EXTREME GREED"
+        sentiment_color = "var(--finance-green)"
+
+    # Responsive Priority: Hide gauge on mobile (<600px)
+    html = f'''
+    <div class="bento-card" style="text-align: center; border-left: 2px solid {sentiment_color} !important;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 2rem; font-weight: 700; color: #FFFFFF; font-variant-numeric: lining-nums;">
+            {val:.0f}
+        </div>
+        <div style="font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 600; color: {sentiment_color}; text-transform: uppercase; letter-spacing: 0.1em;">
+            {sentiment_label}
+        </div>
+        <div class="priority-gauge" style="margin-top: 10px;">
+            <div style="height: 4px; width: 100%; background: #2D2D2D; border-radius: 2px; position: relative;">
+                <div style="height: 100%; width: {val}%; background: {sentiment_color}; border-radius: 2px;"></div>
+            </div>
+        </div>
+    </div>
+    
+    <style>
+    @media (max-width: 600px) {{
+        .priority-gauge {{
+            display: none !important;
+        }}
+    }}
+    </style>
+    '''
+    st.html(html)
+
+@st.fragment(run_every="10s")
+def render_funding_pulse(perp_manager):
+    """Renders the Perpetual Funding Rates as a high-density institutional widget."""
+    latest = perp_manager.get_latest()
+    
+    # Visual Layering: Label recedes at 60% Grey
+    st.markdown('<div class="background-layer" style="font-size: 0.75rem; margin-bottom: 4px; color: #A0A0A0;">PERPETUAL FUNDING PULSE</div>', unsafe_allow_html=True)
+    
+    if not latest:
+        st.markdown('<div class="indicator-value" style="color: var(--trust-blue); font-size: 0.8rem;">SCANNING DERIVATIVES...</div>', unsafe_allow_html=True)
+        return
+        
+    val = latest.value
+    # Urgency Palette Mapping: Extreme Positive/Negative = Urgency
+    # Funding > 0.01% (0.0001) or < -0.01% (-0.0001) is noteworthy
+    if val >= 0.0001:
+        signal_color = "var(--finance-green)"
+        signal_label = "BULLISH CONVICTION"
+    elif val <= -0.0001:
+        signal_color = "var(--bloomberg-red)"
+        signal_label = "PANIC SHORTING"
+    else:
+        signal_color = "var(--ui-text-secondary)"
+        signal_label = "NEUTRAL POSITIONING"
+
+    # Annualized calculation
+    annualized = (val * 3 * 365) * 100 # 8h * 3 * 365
+    
+    html = f'''
+    <div class="bento-card" style="border-left: 2px solid {signal_color} !important;">
+        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 1.4rem; font-weight: 700; color: #FFFFFF; font-variant-numeric: tabular-nums lining-nums;">
+                {val*100:+.4f}%
+            </div>
+            <div style="font-family: 'Inter', sans-serif; font-size: 0.7rem; font-weight: 600; color: {signal_color}; text-transform: uppercase;">
+                {signal_label}
+            </div>
+        </div>
+        
+        <div class="priority-annualized" style="margin-top: 6px; display: flex; justify-content: space-between; font-size: 0.75rem; color: #A0A0A0;">
+            <span>Annualized Rate:</span>
+            <span style="font-family: 'JetBrains Mono'; color: #FFFFFF; font-variant-numeric: tabular-nums;">{annualized:+.2f}%</span>
+        </div>
+    </div>
+    
+    <style>
+    @media (max-width: 1024px) {{
+        .priority-annualized {{
+            display: none !important;
+        }}
+    }}
+    </style>
+    '''
+    st.html(html)
+
+@st.fragment(run_every="300s")
+def render_net_flows_widget(flow_manager):
+    """Renders the Exchange Net Flows as a high-density forensic widget."""
+    latest = flow_manager.get_latest()
+    
+    # Visual Layering: Label recedes at 60% Grey (#A0A0A0)
+    st.markdown('<div class="background-layer" style="font-size: 0.75rem; margin-bottom: 4px; color: #A0A0A0;">EXCHANGE NET FLOWS (BTC)</div>', unsafe_allow_html=True)
+    
+    if not latest:
+        st.markdown('<div class="indicator-value" style="color: var(--trust-blue);">SCANNING FORENSIC LAYER...</div>', unsafe_allow_html=True)
+        return
+        
+    val = latest.value
+    # Urgency Palette Mapping: Inflows = Red (Selling Pressure), Outflows = Green (Accumulation)
+    flow_color = "var(--finance-green)" if val < 0 else "var(--bloomberg-red)"
+    if abs(val) < 100: # Neutral/Small flows
+        flow_color = "var(--ui-text-secondary)"
+        
+    symbol = "▼" if val < 0 else "▲"
+    abs_val = abs(val)
+    
+    # Format value with commas and tabular nums
+    val_str = f"{symbol} {abs_val:,.0f}" if abs_val >= 1 else f"{symbol} {abs_val:.2f}"
+
+    html = f'''
+    <div class="bento-card" style="border-left: 2px solid {flow_color} !important;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 1.2rem; font-weight: 700; color: #FFFFFF; font-variant-numeric: tabular-nums lining-nums;">
+                {val_str}
+            </div>
+            <div style="font-family: 'Inter', sans-serif; font-size: 0.7rem; font-weight: 600; color: {flow_color}; text-transform: uppercase;">
+                {"ACCUMULATION" if val < 0 else "DISTRIBUTION"}
+            </div>
+        </div>
+        
+        <div class="priority-detail" style="margin-top: 8px; font-size: 0.7rem; color: var(--ui-text-secondary);">
+            <div style="display: flex; justify-content: space-between;">
+                <span>Total 24h Flow:</span>
+                <span style="font-family: 'JetBrains Mono'; color: #FFFFFF;">{val:,.2f} BTC</span>
+            </div>
+        </div>
+    </div>
+    
+    <style>
+    @media (max-width: 1024px) {{
+        .priority-detail {{
+            display: none !important;
+        }}
+    }}
+    </style>
+    '''
+    st.html(html)
+
+@st.fragment(run_every="300s")
+def render_mvrv_widget(mvrv_manager):
+    """Renders the MVRV Ratio as a high-density forensic widget."""
+    latest = mvrv_manager.get_latest()
+    
+    # Visual Layering: Label recedes at 60% Grey (#A0A0A0)
+    st.markdown('<div class="background-layer" style="font-size: 0.75rem; margin-bottom: 4px; color: #A0A0A0;">MVRV RATIO (MACRO VALUATION)</div>', unsafe_allow_html=True)
+    
+    if not latest:
+        st.markdown('<div class="indicator-value" style="color: var(--trust-blue); font-size: 0.8rem;">SCANNING ON-CHAIN DATA...</div>', unsafe_allow_html=True)
+        return
+        
+    val = latest.value
+    # Urgency Palette Mapping: > 3.0 = Overvalued (Red), < 1.0 = Undervalued (Green)
+    if val >= 3.0:
+        val_color = "var(--bloomberg-red)"
+        val_label = "OVERVALUED / SELL"
+    elif val <= 1.0:
+        val_color = "var(--finance-green)"
+        val_label = "UNDERVALUED / BUY"
+    else:
+        val_color = "var(--ui-text-secondary)"
+        val_label = "FAIR VALUE"
+
+    html = f'''
+    <div class="bento-card" style="border-left: 2px solid {val_color} !important;">
+        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 1.4rem; font-weight: 700; color: #FFFFFF; font-variant-numeric: tabular-nums lining-nums;">
+                {val:.4f}
+            </div>
+            <div style="font-family: 'Inter', sans-serif; font-size: 0.7rem; font-weight: 600; color: {val_color}; text-transform: uppercase;">
+                {val_label}
+            </div>
+        </div>
+        
+        <div class="priority-sparkline" style="margin-top: 6px; height: 4px; background: #2D2D2D; border-radius: 2px; position: relative;">
+             <div style="position: absolute; left: {min((val/4.0)*100, 100)}%; height: 8px; width: 2px; background: #FFFFFF; top: -2px;"></div>
+        </div>
+    </div>
+    
+    <style>
+    @media (max-width: 600px) {{
+        .priority-sparkline {{
+            display: none !important;
+        }}
+    }}
+    </style>
+    '''
+    st.html(html)

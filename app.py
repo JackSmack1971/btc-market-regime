@@ -135,6 +135,17 @@ def main():
         </style>
     """)
 
+    # NEW: Alpha Command Funding Pulse
+    st.sidebar.markdown("---")
+    from src.ui.dashboard import render_fear_greed_widget, render_sentiment_feed, render_funding_pulse, render_mvrv_widget
+    render_fear_greed_widget(sentiment_manager)
+    render_funding_pulse(perp_manager)
+    render_mvrv_widget(mvrv_manager)
+    
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("📡 SOCIAL RADAR")
+    render_sentiment_feed(social_manager)
+
     # Producer-Consumer Data Stream (Cached Resource)
     @st.cache_resource
     def get_market_stream(_sources_config: dict, _days_hist: int):
@@ -144,8 +155,58 @@ def main():
         logger.info("MarketDataStream cached and started")
         return stream
     
-    # Get or create cached stream
+    @st.cache_resource
+    def get_social_manager():
+        """Singleton SocialStreamManager instance."""
+        from src.streaming.social_manager import SocialStreamManager
+        manager = SocialStreamManager()
+        manager.start()
+        logger.info("SocialStreamManager cached and started")
+        return manager
+    
+    @st.cache_resource
+    def get_sentiment_manager(_config: dict):
+        """Singleton SentimentStreamManager for Fear & Greed."""
+        from src.streaming.sentiment_manager import SentimentStreamManager
+        manager = SentimentStreamManager(_config.get('fear_greed_index', {}))
+        manager.start()
+        logger.info("SentimentStreamManager cached and started")
+        return manager
+    
+    @st.cache_resource
+    def get_flow_manager(_config: dict):
+        """Singleton FlowStreamManager for Exchange Net Flows."""
+        from src.streaming.flow_manager import FlowStreamManager
+        manager = FlowStreamManager(_config.get('exchange_net_flows', {}))
+        manager.start()
+        logger.info("FlowStreamManager cached and started")
+        return manager
+
+    @st.cache_resource
+    def get_perp_manager(_config: dict):
+        """Singleton PerpStreamManager for Perpetual Funding Rates."""
+        from src.streaming.perp_manager import PerpStreamManager
+        manager = PerpStreamManager(_config.get('perpetual_funding_rates', {}))
+        manager.start()
+        logger.info("PerpStreamManager cached and started")
+        return manager
+    
+    @st.cache_resource
+    def get_mvrv_manager(_config: dict):
+        """Singleton MVRVStreamManager for MVRV Ratio."""
+        from src.streaming.mvrv_manager import MVRVStreamManager
+        manager = MVRVStreamManager(_config.get('mvrv_ratio', {}))
+        manager.start()
+        logger.info("MVRVStreamManager cached and started")
+        return manager
+
+    # Get or create cached resources
     stream = get_market_stream(sources_config, days_hist)
+    social_manager = get_social_manager()
+    sentiment_manager = get_sentiment_manager(sources_config)
+    flow_manager = get_flow_manager(sources_config)
+    perp_manager = get_perp_manager(sources_config)
+    mvrv_manager = get_mvrv_manager(sources_config)
     
     # System Status Indicator (monitors MarketDataStream health)
     stream_stats = stream.get_stats()
@@ -300,7 +361,11 @@ def main():
         render_optimizer_section,
         render_technical_logs,
         render_ticker_tape,
-        render_order_book
+        render_order_book,
+        render_sentiment_feed,
+        render_fear_greed_widget,
+        render_net_flows_widget,
+        render_funding_pulse
     )
 
     # Mobile-First: Max 2 columns
@@ -335,6 +400,10 @@ def main():
     st.markdown("---")
     # NEW: Alpha Command Order Book
     render_order_book()
+
+    # NEW: Alpha Command On-Chain Forensic Layer
+    st.markdown("---")
+    render_net_flows_widget(flow_manager)
 
     # Wrap Technical Logs in Expander (Telegram Mobile Optimization)
     with st.expander("🔧 SYSTEM INTERNALS", expanded=False):
