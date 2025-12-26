@@ -1,0 +1,74 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.9, pytest-8.4.2, pluggy-1.6.0 -- C:\Users\click\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\python.exe
+cachedir: .pytest_cache
+hypothesis profile 'default'
+rootdir: C:\workspaces\btc-market-regime
+plugins: anyio-4.11.0, Faker-38.2.0, hypothesis-6.148.4, langsmith-0.5.0, logfire-4.16.0, asyncio-1.3.0, cov-7.0.0, mock-3.15.1
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 17 items
+
+tests/test_ui_dashboard_extended.py::TestRenderMacroThesis::test_render_macro_thesis_displays_heatmap PASSED [  5%]
+tests/test_ui_dashboard_extended.py::TestRenderMacroThesis::test_render_macro_thesis_displays_thesis_text PASSED [ 11%]
+tests/test_ui_dashboard_extended.py::TestRenderForecastSection::test_render_forecast_section_displays_forecast_chart PASSED [ 17%]
+tests/test_ui_dashboard_extended.py::TestRenderForecastSection::test_render_forecast_section_trains_forecaster PASSED [ 23%]
+tests/test_ui_dashboard_extended.py::TestRenderForecastSection::test_render_forecast_section_with_insufficient_history PASSED [ 29%]
+tests/test_ui_dashboard_extended.py::TestRenderOptimizerSection::test_render_optimizer_section_displays_slide_to_confirm PASSED [ 35%]
+tests/test_ui_dashboard_extended.py::TestRenderOptimizerSection::test_render_optimizer_section_runs_optimization_on_button_click PASSED [ 41%]
+tests/test_ui_dashboard_extended.py::TestRenderOptimizerSection::test_render_optimizer_section_with_no_history PASSED [ 47%]
+tests/test_ui_dashboard_extended.py::TestRenderHistoricalAnalysis::test_render_historical_analysis_displays_chart FAILED [ 52%]
+tests/test_ui_dashboard_extended.py::TestRenderHistoricalAnalysis::test_render_historical_analysis_with_empty_history FAILED [ 58%]
+tests/test_ui_dashboard_extended.py::TestFragmentSessionStateIntegration::test_component_breakdown_fragment_isolation PASSED [ 64%]
+tests/test_ui_dashboard_extended.py::TestFragmentSessionStateIntegration::test_kpi_section_reads_from_session_state FAILED [ 70%]
+tests/test_ui_dashboard_extended.py::TestEdgeCasesAndErrorHandling::test_render_backtest_table_with_malformed_data PASSED [ 76%]
+tests/test_ui_dashboard_extended.py::TestEdgeCasesAndErrorHandling::test_render_component_breakdown_with_missing_fields PASSED [ 82%]
+tests/test_ui_dashboard_extended.py::TestEdgeCasesAndErrorHandling::test_render_kpi_section_with_extreme_negative_score PASSED [ 88%]
+tests/test_ui_dashboard_extended.py::TestEdgeCasesAndErrorHandling::test_render_kpi_section_with_extreme_positive_score PASSED [ 94%]
+tests/test_ui_dashboard_extended.py::TestEdgeCasesAndErrorHandling::test_render_kpi_section_with_zero_score PASSED [100%]
+
+================================== FAILURES ===================================
+_ TestRenderHistoricalAnalysis.test_render_historical_analysis_displays_chart _
+tests\test_ui_dashboard_extended.py:215: in test_render_historical_analysis_displays_chart
+    render_historical_analysis(self.mock_history, self.mock_metrics_map)
+src\ui\dashboard.py:311: in render_historical_analysis
+    btc_prices = pd.DataFrame(metrics_map['binance'])
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\click\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pandas\core\frame.py:782: in __init__
+    mgr = dict_to_mgr(data, index, columns, dtype=dtype, copy=copy, typ=manager)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\click\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pandas\core\internals\construction.py:503: in dict_to_mgr
+    return arrays_to_mgr(arrays, columns, index, dtype=dtype, typ=typ, consolidate=copy)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\click\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pandas\core\internals\construction.py:114: in arrays_to_mgr
+    index = _extract_index(arrays)
+            ^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\click\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pandas\core\internals\construction.py:667: in _extract_index
+    raise ValueError("If using all scalar values, you must pass an index")
+E   ValueError: If using all scalar values, you must pass an index
+_ TestRenderHistoricalAnalysis.test_render_historical_analysis_with_empty_history _
+tests\test_ui_dashboard_extended.py:231: in test_render_historical_analysis_with_empty_history
+    render_historical_analysis([], self.mock_metrics_map)
+src\ui\dashboard.py:311: in render_historical_analysis
+    btc_prices = pd.DataFrame(metrics_map['binance'])
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\click\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pandas\core\frame.py:782: in __init__
+    mgr = dict_to_mgr(data, index, columns, dtype=dtype, copy=copy, typ=manager)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\click\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pandas\core\internals\construction.py:503: in dict_to_mgr
+    return arrays_to_mgr(arrays, columns, index, dtype=dtype, typ=typ, consolidate=copy)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\click\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pandas\core\internals\construction.py:114: in arrays_to_mgr
+    index = _extract_index(arrays)
+            ^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\click\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pandas\core\internals\construction.py:667: in _extract_index
+    raise ValueError("If using all scalar values, you must pass an index")
+E   ValueError: If using all scalar values, you must pass an index
+_ TestFragmentSessionStateIntegration.test_kpi_section_reads_from_session_state _
+tests\test_ui_dashboard_extended.py:250: in test_kpi_section_reads_from_session_state
+    mock_st.session_state.get = Mock(return_value={'label': 'BULL', 'score': 3.5, 'confidence': 'HIGH'})
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'dict' object attribute 'get' is read-only
+=========================== short test summary info ===========================
+FAILED tests/test_ui_dashboard_extended.py::TestRenderHistoricalAnalysis::test_render_historical_analysis_displays_chart
+FAILED tests/test_ui_dashboard_extended.py::TestRenderHistoricalAnalysis::test_render_historical_analysis_with_empty_history
+FAILED tests/test_ui_dashboard_extended.py::TestFragmentSessionStateIntegration::test_kpi_section_reads_from_session_state
+======================== 3 failed, 14 passed in 2.96s =========================

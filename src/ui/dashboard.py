@@ -308,11 +308,15 @@ def render_historical_analysis(history: List[Dict[str, Any]], metrics_map: Dict[
     """Renders the historical regime chart with price overlay."""
     btc_prices = pd.DataFrame()
     if 'binance' in metrics_map:
-        btc_prices = pd.DataFrame(metrics_map['binance'])
-        btc_prices.set_index('timestamp', inplace=True)
+        data = metrics_map['binance']
+        btc_prices = pd.DataFrame([data] if isinstance(data, dict) else data)
+        if not btc_prices.empty and 'timestamp' in btc_prices.columns:
+            btc_prices.set_index('timestamp', inplace=True)
     elif 'coingecko' in metrics_map:
-        btc_prices = pd.DataFrame(metrics_map['coingecko'])
-        btc_prices.set_index('timestamp', inplace=True)
+        data = metrics_map['coingecko']
+        btc_prices = pd.DataFrame([data] if isinstance(data, dict) else data)
+        if not btc_prices.empty and 'timestamp' in btc_prices.columns:
+            btc_prices.set_index('timestamp', inplace=True)
 
     st.plotly_chart(plot_regime_history(history, btc_prices), use_container_width=True)
 

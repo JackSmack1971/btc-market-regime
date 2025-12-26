@@ -243,11 +243,10 @@ class TestFragmentSessionStateIntegration(unittest.TestCase):
         """Test render_kpi_section fragment reads snapshot from session_state."""
         # Arrange
         from src.ui.dashboard import render_kpi_section
-        mock_st.session_state = {
-            'snapshot': {'label': 'BULL', 'score': 3.5, 'confidence': 'HIGH'}
-        }
+        mock_snapshot = {'label': 'BULL', 'score': 3.5, 'confidence': 'HIGH'}
+        mock_st.session_state = MagicMock()
+        mock_st.session_state.get.return_value = mock_snapshot
         mock_st.fragment = Mock(return_value=lambda f: f)
-        mock_st.session_state.get = Mock(return_value={'label': 'BULL', 'score': 3.5, 'confidence': 'HIGH'})
         
         snapshot = {'label': 'NEUTRAL', 'score': 0.0, 'confidence': 'LOW'}
         
