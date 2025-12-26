@@ -257,8 +257,8 @@ def calculate_regime(scored_metrics: List[ScoredMetric], anomaly_status: Optiona
     breakdown = [
         {
             "metric_name": m.metric_name,
-            "score": round(m.score, 2),
-            "raw_value": round(m.raw_value, 4),
+            "score": m.score,
+            "raw_value": m.raw_value,
             "confidence": m.confidence,
             "is_fallback": m.is_fallback
         }

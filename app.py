@@ -62,6 +62,12 @@ def main():
     # Live Connection Beacon + Title
     st.markdown('<span class="live-beacon"></span>', unsafe_allow_html=True)
     st.markdown("# ₿ BITCOIN REGIME INTELLIGENCE")
+    
+    # NEW: Alpha Command Ticker Tape
+    if 'snapshot' in st.session_state:
+        from src.ui.dashboard import render_ticker_tape
+        render_ticker_tape(st.session_state.snapshot)
+        
     st.markdown("---")
 
     sources_config = load_sources()
@@ -91,6 +97,43 @@ def main():
             st.markdown(chips_html, unsafe_allow_html=True)
         else:
             st.info("No active sessions. Refresh to see system health.")
+
+    # ACCESSIBILITY HUD
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("👓 ACCESSIBILITY HUD")
+    cvd_mode = st.sidebar.toggle("CVD Mode (High Contrast)", help="Swap Red/Green for Blue/Orange palette.")
+    color_schema = st.sidebar.selectbox("Color Schema", ["Western (Bull=Green)", "Eastern (Bull=Red)"])
+
+    # Dynamic Style Overrides based on Accessibility HUD
+    # Finance Green: #4AF6C3, Bloomberg Red: #FF433D
+    # CVD Blue: #007ACC, CVD Orange: #FF8C00
+    
+    green = "#4AF6C3"
+    red = "#FF433D"
+    
+    if cvd_mode:
+        green = "#007ACC" # High-contrast Blue
+        red = "#FF8C00"   # High-contrast Orange
+        
+    if color_schema == "Eastern (Bull=Red)":
+        green, red = red, green
+        
+    # Extract RGB for transparency effects
+    def hex_to_rgb(h):
+        h = h.lstrip('#')
+        return ', '.join(str(int(h[i:i+2], 16)) for i in (0, 2, 4))
+    
+    green_rgb = hex_to_rgb(green)
+        
+    st.html(f"""
+        <style>
+        :root {{
+            --finance-green: {green} !important;
+            --finance-green-rgb: {green_rgb} !important;
+            --bloomberg-red: {red} !important;
+        }}
+        </style>
+    """)
 
     # Producer-Consumer Data Stream (Cached Resource)
     @st.cache_resource
@@ -241,8 +284,13 @@ def main():
                     play_regime_flip_audio()
             
             st.session_state.previous_regime = st.session_state.snapshot['label']
+            
+    # Assign session state to local variables for faster resolution
+    snapshot = st.session_state.get('snapshot', {})
+    mtf = st.session_state.get('mtf', {})
+    history = st.session_state.get('history', [])
+    metrics_map = st.session_state.get('metrics_map', {})
 
-    # PAGE LAYOUT (Mobile-Optimized for Telegram)
     from src.ui.dashboard import (
         render_kpi_section, 
         render_macro_thesis, 
@@ -250,24 +298,26 @@ def main():
         render_historical_analysis,
         render_forecast_section,
         render_optimizer_section,
-        render_technical_logs
+        render_technical_logs,
+        render_ticker_tape,
+        render_order_book
     )
 
     # Mobile-First: Max 2 columns
     col1, col2 = st.columns([1, 1])
 
     with col1:
-        render_kpi_section(st.session_state.snapshot)
+        render_kpi_section(snapshot)
 
     with col2:
-        render_macro_thesis(st.session_state.mtf)
+        render_macro_thesis(mtf)
     
     # Component Breakdown (Full Width)
-    render_component_breakdown(st.session_state.snapshot['breakdown'])
+    render_component_breakdown(snapshot.get('breakdown', []))
 
     # Anomaly Alert Banner
-    if 'anomaly_alert' in st.session_state.snapshot:
-        alert = st.session_state.snapshot['anomaly_alert']
+    if 'anomaly_alert' in snapshot:
+        alert = snapshot['anomaly_alert']
         if alert['is_anomaly']:
             severity = alert['severity']
             color = "red" if severity == "HIGH" else "orange"
@@ -276,18 +326,23 @@ def main():
 
     st.markdown("---")
     
-    render_historical_analysis(st.session_state.history, st.session_state.metrics_map)
+    render_historical_analysis(history, metrics_map)
     
-    render_forecast_section(st.session_state.history, st.session_state.snapshot['score'])
+    render_forecast_section(history, snapshot.get('score', 0.0))
 
-    render_optimizer_section(st.session_state.history, st.session_state.metrics_map)
+    render_optimizer_section(history, metrics_map)
+    
+    st.markdown("---")
+    # NEW: Alpha Command Order Book
+    render_order_book()
 
     # Wrap Technical Logs in Expander (Telegram Mobile Optimization)
     with st.expander("🔧 SYSTEM INTERNALS", expanded=False):
-        render_technical_logs(st.session_state.metrics_map, st.session_state.snapshot, st.session_state.mtf)
+        render_technical_logs(metrics_map, snapshot, mtf)
 
-    # Footer
-    st.markdown(f"**ENGINE V{st.session_state.snapshot['engine_version']}** | LAST SYNC: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    # Footer (Visual Layering: Regular, 60% Grey)
+    footer_text = f"ENGINE V{snapshot.get('engine_version', '5.1')} | LAST SYNC: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+    st.markdown(f'<div class="background-layer" style="font-size: 0.75rem; text-align: center;">{footer_text}</div>', unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()

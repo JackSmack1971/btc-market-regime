@@ -67,8 +67,8 @@ def render_kpi_section(snapshot: Dict[str, Any]):
         }}
         </style>
         <div class="regime-verdict-container {flash_class}">
-            <div class="regime-verdict-title">CURRENT REGIME:</div>
-            <h3 class="regime-verdict-value"><span class="{label_class}">{label}</span></h3>
+            <div class="regime-verdict-title background-layer">CURRENT REGIME:</div>
+            <h3 class="regime-verdict-value primary-layer"><span class="{label_class}">{label}</span></h3>
         </div>
         """
         st.html(html)
@@ -126,8 +126,8 @@ def render_component_breakdown(breakdown: List[Dict[str, Any]]):
     
     st.markdown("### 📊 COMPONENT BREAKDOWN")
     
-    # High-frequency fragment for auto-refresh (0.1s/10Hz synchronization)
-    @st.fragment(run_every="0.1s")
+    # High-frequency fragment for auto-refresh (0.5s synchronization)
+    @st.fragment(run_every="0.5s")
     def render_indicators_table():
         """Auto-refreshing HTML table for Top 8 Indicators."""
         html = """
@@ -139,12 +139,13 @@ def render_component_breakdown(breakdown: List[Dict[str, Any]]):
             border: 1px solid #45a29e;
             border-radius: 3px;
             overflow: hidden;
-            font-feature-settings: "tnum" 1;
+            font-feature-settings: "tnum" 1, "lnum" 1;
+            font-variant-numeric: tabular-nums lining-nums;
             table-layout: fixed;
         }
         
         .indicators-table thead {
-            background: rgba(5, 217, 232, 0.1);
+            background: rgba(var(--finance-green-rgb), 0.1);
         }
         
         .indicators-table th {
@@ -152,12 +153,12 @@ def render_component_breakdown(breakdown: List[Dict[str, Any]]):
             font-family: 'Inter', sans-serif;
             font-weight: 600;
             font-size: 0.75rem;
-            color: #05D9E8;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            border-bottom: 2px solid #05D9E8;
-            vertical-align: middle;
-        }
+        color: var(--finance-green);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        border-bottom: 2px solid var(--finance-green);
+        vertical-align: middle;
+    }
         
         .indicators-table th:nth-child(1) {
             width: 40%;
@@ -168,6 +169,8 @@ def render_component_breakdown(breakdown: List[Dict[str, Any]]):
         .indicators-table th:nth-child(3),
         .indicators-table th:nth-child(4) {
             width: 20%;
+            min-width: 120px;
+            max-width: 120px;
             text-align: right;
         }
         
@@ -207,22 +210,22 @@ def render_component_breakdown(breakdown: List[Dict[str, Any]]):
         
         /* Momentum Signals: Finance Green / Bloomberg Red */
         .momentum-positive {
-            color: #4AF6C3;
+            color: var(--finance-green);
             text-shadow: 0 0 8px rgba(74, 246, 195, 0.4);
         }
         
         .momentum-negative {
-            color: #FF433D;
+            color: var(--bloomberg-red);
             text-shadow: 0 0 8px rgba(255, 67, 61, 0.4);
         }
         
         .momentum-neutral {
-            color: rgba(255, 255, 255, 0.6);
+            color: var(--ui-text-secondary);
         }
         
         /* Confidence Badge */
         .confidence-high {
-            color: #4AF6C3;
+            color: var(--finance-green);
             font-weight: 600;
         }
         
@@ -232,7 +235,7 @@ def render_component_breakdown(breakdown: List[Dict[str, Any]]):
         }
         
         .confidence-low {
-            color: #FF433D;
+            color: var(--bloomberg-red);
             font-weight: 600;
         }
         </style>
@@ -284,7 +287,6 @@ def render_component_breakdown(breakdown: List[Dict[str, Any]]):
                 raw_value_str = str(raw_value)
 
             # Priority Hiding Logic: Hide secondary columns on mobile
-            # Indicators: Network Hash Rate and Exchange Net Flows are Low Priority
             low_priority_metrics = ["Network Hash Rate", "Exchange Net Flows"]
             priority_class = "col-priority-2" if metric_name in low_priority_metrics else "col-priority-1"
             
@@ -292,10 +294,10 @@ def render_component_breakdown(breakdown: List[Dict[str, Any]]):
             # Header: INDICATOR | SCORE | RAW VALUE | CONFIDENCE
             html += f"""
                 <tr class="{priority_class}">
-                    <td class="indicator-label col-priority-1">{metric_name}</td>
-                    <td class="indicator-value {momentum_class} col-priority-1">{momentum_symbol} {score:.2f}</td>
-                    <td class="indicator-value col-priority-2">{raw_value_str}</td>
-                    <td class="indicator-value {confidence_class} col-priority-3">{confidence}</td>
+                    <td class="indicator-label background-layer col-priority-1">{metric_name}</td>
+                    <td class="indicator-value primary-layer {momentum_class} col-priority-1">{momentum_symbol} {score:.2f}</td>
+                    <td class="indicator-value secondary-layer col-priority-2">{raw_value_str}</td>
+                    <td class="indicator-value background-layer {confidence_class} col-priority-3">{confidence}</td>
                 </tr>
             """
         
@@ -438,7 +440,7 @@ def render_optimizer_section(history: List[Dict[str, Any]], metrics_map: Dict[st
                 <div class="slide-track" id="slideTrack">
                     <div class="slide-background"></div>
                     <div class="slide-button">▶</div>
-                    <div class="slide-text">SLIDE TO RUN OPTIMIZATION</div>
+                    <div class="slide-text">SLIDE TO RUN INSTITUTIONAL BACKTEST</div>
                 </div>
             </div>
             
@@ -735,6 +737,124 @@ def render_backtest_table(backtest_results: List[Dict[str, Any]], current_regime
     </div>
     """
     
+    st.html(html)
+
+def render_ticker_tape(snapshot: Dict[str, Any]):
+    """Renders a high-frequency ticker tape with JetBrains Mono and tabular alignment."""
+    score = snapshot.get('score', 0.0)
+    label = snapshot.get('label', 'UNKNOWN')
+    
+    st.html(f"""
+        <style>
+        .ticker-tape-container {{
+            width: 100%;
+            overflow: hidden;
+            background: rgba(18, 18, 18, 0.9);
+            border-bottom: 1px solid var(--structural-border);
+            padding: 4px 0;
+            white-space: nowrap;
+        }}
+        
+        .ticker-tape {{
+            display: inline-block;
+            padding-left: 100%;
+            animation: ticker 30s linear infinite;
+            font-family: 'JetBrains Mono', monospace !important;
+            font-size: 0.85rem;
+            color: #E0E0E0;
+            font-variant-numeric: tabular-nums lining-nums;
+        }}
+        
+        @keyframes ticker {{
+            0% {{ transform: translate(0, 0); }}
+            100% {{ transform: translate(-100%, 0); }}
+        }}
+        
+        .ticker-item {{
+            margin-right: 2rem;
+            display: inline-block;
+        }}
+        
+        .ticker-label {{
+            opacity: 0.6;
+            margin-right: 0.5rem;
+        }}
+        
+        .ticker-value {{
+            font-weight: 700;
+        }}
+        </style>
+        <div class="ticker-tape-container">
+            <div class="ticker-tape">
+                <span class="ticker-item"><span class="ticker-label">REGIME:</span><span class="ticker-value">{label}</span></span>
+                <span class="ticker-item"><span class="ticker-label">SCORE:</span><span class="ticker-value">{score:.2f}</span></span>
+                <span class="ticker-item"><span class="ticker-label">BTC/USD:</span><span class="ticker-value">LATEST_TICK</span></span>
+                <span class="ticker-item"><span class="ticker-label">DOMINANCE:</span><span class="ticker-value">52.4%</span></span>
+            </div>
+        </div>
+    """)
+
+def render_order_book(mock_data: bool = True):
+    """Renders a structural order book component with functional alignment."""
+    st.markdown("### 📑 ORDER BOOK DEPTH")
+    
+    html = """
+    <style>
+    .order-book-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2px;
+        background: #1E1E1E;
+        border: 1px solid var(--structural-border);
+        padding: 4px;
+        font-family: 'JetBrains Mono', monospace !important;
+        font-size: 0.8rem;
+        font-variant-numeric: tabular-nums lining-nums;
+    }
+    
+    .ob-header {
+        opacity: 0.6;
+        padding-bottom: 4px;
+        border-bottom: 1px solid var(--structural-border);
+        margin-bottom: 4px;
+        text-transform: uppercase;
+        font-size: 0.7rem;
+    }
+    
+    .ob-row {
+        display: grid;
+        grid-template-columns: 1fr 1.5fr;
+        margin-bottom: 2px;
+    }
+    
+    .ob-price {
+        font-weight: 700;
+        text-align: left;
+    }
+    
+    .ob-size {
+        text-align: right;
+        opacity: 0.8;
+    }
+    
+    .bid-price { color: var(--finance-green); }
+    .ask-price { color: var(--bloomberg-red); }
+    </style>
+    <div class="order-book-container">
+        <div class="ob-column">
+            <div class="ob-header">BIDS</div>
+            <div class="ob-row"><span class="ob-price bid-price">98442.10</span><span class="ob-size">1.442</span></div>
+            <div class="ob-row"><span class="ob-price bid-price">98441.50</span><span class="ob-size">0.088</span></div>
+            <div class="ob-row"><span class="ob-price bid-price">98440.00</span><span class="ob-size">2.110</span></div>
+        </div>
+        <div class="ob-column">
+            <div class="ob-header">ASKS</div>
+            <div class="ob-row"><span class="ob-price ask-price">98443.50</span><span class="ob-size">0.512</span></div>
+            <div class="ob-row"><span class="ob-price ask-price">98444.00</span><span class="ob-size">1.998</span></div>
+            <div class="ob-row"><span class="ob-price ask-price">98445.20</span><span class="ob-size">0.021</span></div>
+        </div>
+    </div>
+    """
     st.html(html)
 
 def render_technical_logs(metrics_map: Dict[str, Any], snapshot: Dict[str, Any], mtf: Dict[str, Any]):

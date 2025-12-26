@@ -4,15 +4,27 @@ def inject_bloomberg_styles():
     """Injects Bloomberg-inspired structural CSS with typographic engineering."""
     st.html("""
         <style>
+        /* ========== DYNAMIC SEMANTIC TOKENS ========== */
+        :root {
+            --finance-green: #4AF6C3;
+            --finance-green-rgb: 74, 246, 195;
+            --bloomberg-red: #FF433D;
+            --structural-border: #3E3E42;
+            --background-void: #121212;
+            --ui-text-primary: #E0E0E0;
+            --ui-text-secondary: rgba(224, 224, 224, 0.6);
+        }
+
         /* ========== TYPOGRAPHIC ENGINEERING ========== */
         
         /* Import JetBrains Mono for all data displays */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap');
 
         /* 1) Global font hierarchy */
-        /* Target core text elements specifically to avoid breaking Material Icon ligatures */
-        html, body, p, div, label, li, .stMarkdown {
+        /* Structural Layer: Inter for UI logic */
+        html, body, p, div, label, li, .stMarkdown, button, .stButton > button {
             font-family: 'Inter', sans-serif !important;
+            font-weight: 400;
         }
         
         /* Ensure Material Symbols are NEVER overridden by Inter */
@@ -21,22 +33,42 @@ def inject_bloomberg_styles():
             font-family: 'Material Symbols Rounded' !important;
         }
         
-        /* Apply JetBrains Mono to all data containers */
+        /* Hot Path: JetBrains Mono for all market data */
         [data-testid="stMetricValue"], 
         [class*="stDataFrame"], 
         code, 
         .terminal-data, 
         .metric-value,
         .price-value,
-        .indicator-value {
+        .indicator-value,
+        .ticker-tape,
+        .order-book-data {
             font-family: 'JetBrains Mono', monospace !important;
         }
 
         /* 2) Enforce tabular-nums and lining-nums for all numerical displays */
         /* This ensures perfect vertical alignment in tables and prevents layout jitter */
-        * {
+        html, body, * {
             font-variant-numeric: tabular-nums lining-nums !important;
             font-feature-settings: "tnum" 1, "lnum" 1 !important;
+        }
+
+        /* 3) Tri-Layer Hierarchy (Visual Layering) */
+        .primary-layer {
+            opacity: 1.0 !important;
+            font-weight: 700 !important;
+            color: #FFFFFF !important;
+        }
+
+        .secondary-layer {
+            opacity: 1.0 !important;
+            font-weight: 600 !important;
+        }
+
+        .background-layer {
+            opacity: 0.6 !important;
+            font-weight: 400 !important;
+            color: var(--ui-text-primary) !important;
         }
 
         /* Target specific Streamlit elements for tabular alignment */
@@ -52,12 +84,12 @@ def inject_bloomberg_styles():
         
         /* 3) Fixed min-width on metric containers to prevent layout jitter */
         [data-testid="stMetric"] {
-            min-width: 180px;
-            max-width: 280px;
+            min-width: 200px;
+            max-width: 300px;
         }
         
         [data-testid="stMetricValue"] {
-            min-width: 120px;
+            min-width: 140px;
             display: inline-block;
             text-align: right;
         }
@@ -101,7 +133,7 @@ def inject_bloomberg_styles():
         /* Bento Box structural frame - Warm Grey borders */
         .stContainer,
         [data-testid='stVerticalBlock'] > div[data-testid='stVerticalBlock'] {
-            border: 1px solid #3E3E42;
+            border: 1px solid var(--structural-border) !important;
             border-radius: 8px;
             padding: 8px;
             background: rgba(11, 12, 16, 0.6);
@@ -163,7 +195,20 @@ def inject_bloomberg_styles():
         
         /* Data-Ink Optimization: Reduce padding for maximum rows */
         [data-testid="stVerticalBlock"] > div {
-            padding: 4px 0;
+            padding: 2px 0;
+        }
+        
+        /* Visual Layering: Labels at 60% opacity */
+        [data-testid="stMetricLabel"], .metric-label, .hud-label {
+            opacity: 0.6 !important;
+            font-weight: 400 !important;
+            color: #E0E0E0 !important;
+        }
+
+        /* Visual Layering: Primary Data at 100% Bold */
+        [data-testid="stMetricValue"], .metric-value, .primary-data {
+            opacity: 1.0 !important;
+            font-weight: 700 !important;
         }
         
         /* Layout Stability: Fixed widths prevent jitter */

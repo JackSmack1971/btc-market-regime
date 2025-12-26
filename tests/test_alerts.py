@@ -36,6 +36,7 @@ class TestTelegramNotifier(unittest.IsolatedAsyncioTestCase):
         """Verify handling of API failures (e.g., 401 Unauthorized)."""
         mock_response = AsyncMock()
         mock_response.status = 401
+        mock_response.json.return_value = {"description": "Unauthorized"}
         mock_post.return_value.__aenter__.return_value = mock_response
 
         success = await self.notifier.send("Test Message")
