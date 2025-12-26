@@ -1,6 +1,7 @@
 import asyncio
 import aiohttp
 import streamlit as st
+import time
 import pandas as pd
 from datetime import datetime
 from src.fetchers import FetcherFactory

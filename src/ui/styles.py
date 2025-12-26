@@ -10,8 +10,15 @@ def inject_bloomberg_styles():
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap');
 
         /* 1) Global font hierarchy */
-        html, body, [class*="st-"] {
+        /* Target core text elements specifically to avoid breaking Material Icon ligatures */
+        html, body, p, div, label, li, .stMarkdown {
             font-family: 'Inter', sans-serif !important;
+        }
+        
+        /* Ensure Material Symbols are NEVER overridden by Inter */
+        .material-symbols-rounded,
+        [data-testid="stExpanderIcon"] {
+            font-family: 'Material Symbols Rounded' !important;
         }
         
         /* Apply JetBrains Mono to all data containers */
