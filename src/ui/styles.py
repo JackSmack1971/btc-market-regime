@@ -35,8 +35,8 @@ def inject_bloomberg_styles():
         /* 2) Enforce tabular-nums and lining-nums for all numerical displays */
         /* This ensures perfect vertical alignment in tables and prevents layout jitter */
         * {
-            font-variant-numeric: tabular-nums lining-nums;
-            font-feature-settings: "tnum" 1, "lnum" 1;
+            font-variant-numeric: tabular-nums lining-nums !important;
+            font-feature-settings: "tnum" 1, "lnum" 1 !important;
         }
 
         /* Target specific Streamlit elements for tabular alignment */

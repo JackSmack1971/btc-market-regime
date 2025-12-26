@@ -126,8 +126,8 @@ def render_component_breakdown(breakdown: List[Dict[str, Any]]):
     
     st.markdown("### 📊 COMPONENT BREAKDOWN")
     
-    # High-frequency fragment for auto-refresh (0.5s conflation)
-    @st.fragment(run_every="0.5s")
+    # High-frequency fragment for auto-refresh (0.1s/10Hz synchronization)
+    @st.fragment(run_every="0.1s")
     def render_indicators_table():
         """Auto-refreshing HTML table for Top 8 Indicators."""
         html = """
