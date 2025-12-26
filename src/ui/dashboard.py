@@ -126,8 +126,8 @@ def render_component_breakdown(breakdown: List[Dict[str, Any]]):
     
     st.markdown("### 📊 COMPONENT BREAKDOWN")
     
-    # High-frequency fragment for auto-refresh
-    @st.fragment(run_every="0.1s")
+    # High-frequency fragment for auto-refresh (0.5s conflation)
+    @st.fragment(run_every="0.5s")
     def render_indicators_table():
         """Auto-refreshing HTML table for Top 8 Indicators."""
         html = """
@@ -282,11 +282,16 @@ def render_component_breakdown(breakdown: List[Dict[str, Any]]):
                     raw_value_str = f"{raw_value:.2f}"
             else:
                 raw_value_str = str(raw_value)
+
+            # Priority Hiding Logic: Hide secondary columns on mobile
+            # Indicators: Network Hash Rate and Exchange Net Flows are Low Priority
+            low_priority_metrics = ["Network Hash Rate", "Exchange Net Flows"]
+            priority_class = "col-priority-2" if metric_name in low_priority_metrics else "col-priority-1"
             
             # CRITICAL FIX: Column order must match header order
             # Header: INDICATOR | SCORE | RAW VALUE | CONFIDENCE
             html += f"""
-                <tr>
+                <tr class="{priority_class}">
                     <td class="indicator-label">{metric_name}</td>
                     <td class="indicator-value {momentum_class}">{momentum_symbol} {score:.2f}</td>
                     <td class="indicator-value">{raw_value_str}</td>

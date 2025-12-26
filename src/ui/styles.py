@@ -94,8 +94,8 @@ def inject_bloomberg_styles():
         
         /* Eliminate column gaps for high-density widget placement */
         [data-testid='column'] {
-            padding: 4px !important;
-            gap: 4px !important;
+            padding: 0 !important;
+            gap: 0 !important;
         }
         
         /* Bento Box structural frame - Warm Grey borders */
