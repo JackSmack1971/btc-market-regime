@@ -7,6 +7,7 @@ from src.fetchers import FetcherFactory
 from src.analyzer import RegimeAnalyzer, calculate_regime, analyze_history, analyze_mtf
 from src.ui.layout import apply_custom_css, inject_google_fonts
 from src.ui.styles import inject_bloomberg_styles
+from src.ui.command_palette import inject_command_palette
 from src.ui.charts import plot_regime_history, plot_confluence_heatmap, plot_score_gauge
 from src.streaming import MarketDataStream
 from src.utils import logger, health_tracker, alert_manager
@@ -53,6 +54,7 @@ def main():
     inject_bloomberg_styles()
     inject_google_fonts()
     apply_custom_css()
+    inject_command_palette()  # Command Palette with Cmd+K
     
     # Live Connection Beacon + Title
     st.markdown('<span class="live-beacon"></span>', unsafe_allow_html=True)
