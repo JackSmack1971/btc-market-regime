@@ -7,13 +7,102 @@ from ..intelligence.forecaster import RegimeForecaster
 from ..backtesting.optimizer import BacktestOptimizer
 
 def render_kpi_section(snapshot: Dict[str, Any]):
-    """Renders the top KPI cards and score gauge."""
-    label = snapshot['label']
+    """Renders the top KPI cards with Visual Layering and high-frequency regime verdict updates."""
+    
+    # High-frequency fragment for Market Regime Verdict (10Hz updates)
+    @st.fragment(run_every="0.1s")
+    def render_regime_verdict():
+        """Auto-refreshing regime verdict with flash effect on state change."""
+        current_snapshot = st.session_state.get('snapshot', snapshot)
+        label = current_snapshot.get('label', 'UNKNOWN')
+        score = current_snapshot.get('score', 0.0)
+        confidence = current_snapshot.get('confidence', 'UNKNOWN')
+        
+        # Detect state change for flash effect
+        prev_label = st.session_state.get('prev_regime_label', label)
+        flash_class = "flash-regime" if prev_label != label else ""
+        st.session_state.prev_regime_label = label
+        
+        label_class = "regime-bull" if label == "BULL" else "regime-bear" if label == "BEAR" else "regime-neutral"
+        
+        # Visual Layering: Raw HTML with semantic colors and flash effect
+        html = f"""
+        <style>
+        /* Flash effect on regime state change (300ms) */
+        @keyframes flash-regime {{
+            0% {{ background-color: rgba(5, 217, 232, 0); }}
+            50% {{ background-color: rgba(5, 217, 232, 0.3); }}
+            100% {{ background-color: rgba(5, 217, 232, 0); }}
+        }}
+        
+        .regime-verdict-container {{
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            border-radius: 8px;
+        }}
+        
+        .regime-verdict-container.flash-regime {{
+            animation: flash-regime 300ms ease-out;
+        }}
+        
+        /* Visual Layering: Label at 60% opacity */
+        .regime-verdict-title {{
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.6);
+            opacity: 0.6;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.5rem;
+        }}
+        
+        /* Visual Layering: Value at 100% opacity, 700 weight */
+        .regime-verdict-value {{
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2rem;
+            font-weight: 700;
+            opacity: 1.0;
+            margin: 0;
+        }}
+        </style>
+        <div class="regime-verdict-container {flash_class}">
+            <div class="regime-verdict-title">CURRENT REGIME:</div>
+            <h3 class="regime-verdict-value"><span class="{label_class}">{label}</span></h3>
+        </div>
+        """
+        st.html(html)
+    
+    # Render high-frequency regime verdict
+    render_regime_verdict()
+    
+    # Visual Layering for metrics: values at opacity 1.0, labels at 0.6
     score = snapshot['score']
     confidence = snapshot['confidence']
     
-    label_class = "regime-bull" if label == "BULL" else "regime-bear" if label == "BEAR" else "regime-neutral"
-    st.markdown(f"### CURRENT REGIME: <span class='{label_class}'>{label}</span>", unsafe_allow_html=True)
+    st.html(f"""
+        <style>
+        /* Visual Layering for metric cards */
+        [data-testid="stMetricLabel"] {{
+            opacity: 0.6 !important;
+            font-weight: 400 !important;
+        }}
+        
+        [data-testid="stMetricValue"] {{
+            opacity: 1.0 !important;
+            font-weight: 700 !important;
+        }}
+        
+        /* Semantic colors for score value */
+        .score-positive {{
+            color: #4AF6C3 !important;
+        }}
+        
+        .score-negative {{
+            color: #FF433D !important;
+        }}
+        </style>
+    """)
     
     st.metric("Total Score", f"{score:.2f}", help="Aggregated score from -5 to +5.")
     st.metric("Confidence", confidence, help="Reliability of the current signal.")
@@ -27,10 +116,11 @@ def render_macro_thesis(mtf: Dict[str, Any]):
     st.plotly_chart(plot_confluence_heatmap(mtf), use_container_width=True)
 
 def render_component_breakdown(breakdown: List[Dict[str, Any]]):
-    """Renders the individual indicator breakdown table with auto-refresh."""
+    """Renders the individual indicator breakdown table with high-frequency auto-refresh."""
     st.markdown("### COMPONENT BREAKDOWN")
     
-    @st.fragment(run_every="0.5s")
+    # High-frequency fragment for Top 8 Indicators (10Hz updates)
+    @st.fragment(run_every="0.1s")
     def render_indicators_table():
         """Auto-refreshing HTML table for Top 8 Indicators."""
         if not breakdown:
@@ -42,13 +132,13 @@ def render_component_breakdown(breakdown: List[Dict[str, Any]]):
         <style>
         .indicators-table {
             width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
+            border-collapse: collapse;
             background: rgba(31, 40, 51, 0.4);
             border: 1px solid #45a29e;
             border-radius: 3px;
             overflow: hidden;
             font-feature-settings: "tnum" 1;
+            table-layout: fixed;
         }
         
         .indicators-table thead {
@@ -57,7 +147,6 @@ def render_component_breakdown(breakdown: List[Dict[str, Any]]):
         
         .indicators-table th {
             padding: 12px 16px;
-            text-align: left;
             font-family: 'Inter', sans-serif;
             font-weight: 600;
             font-size: 0.75rem;
@@ -65,6 +154,19 @@ def render_component_breakdown(breakdown: List[Dict[str, Any]]):
             text-transform: uppercase;
             letter-spacing: 0.1em;
             border-bottom: 2px solid #05D9E8;
+            vertical-align: middle;
+        }
+        
+        .indicators-table th:nth-child(1) {
+            width: 40%;
+            text-align: left;
+        }
+        
+        .indicators-table th:nth-child(2),
+        .indicators-table th:nth-child(3),
+        .indicators-table th:nth-child(4) {
+            width: 20%;
+            text-align: right;
         }
         
         .indicators-table tbody tr {
@@ -79,6 +181,8 @@ def render_component_breakdown(breakdown: List[Dict[str, Any]]):
         .indicators-table td {
             padding: 10px 16px;
             border-bottom: 1px solid rgba(69, 162, 158, 0.2);
+            vertical-align: middle;
+            white-space: nowrap;
         }
         
         /* Label Column: Inter Regular 60% grey */
@@ -87,6 +191,7 @@ def render_component_breakdown(breakdown: List[Dict[str, Any]]):
             font-weight: 400;
             font-size: 0.9rem;
             color: rgba(255, 255, 255, 0.6);
+            text-align: left;
         }
         
         /* Value Columns: JetBrains Mono Bold 100% white */
@@ -134,9 +239,9 @@ def render_component_breakdown(breakdown: List[Dict[str, Any]]):
             <thead>
                 <tr>
                     <th>INDICATOR</th>
-                    <th style="text-align: right;">SCORE</th>
-                    <th style="text-align: right;">RAW VALUE</th>
-                    <th style="text-align: right;">CONFIDENCE</th>
+                    <th>SCORE</th>
+                    <th>RAW VALUE</th>
+                    <th>CONFIDENCE</th>
                 </tr>
             </thead>
             <tbody>
@@ -176,6 +281,8 @@ def render_component_breakdown(breakdown: List[Dict[str, Any]]):
             else:
                 raw_value_str = str(raw_value)
             
+            # CRITICAL FIX: Column order must match header order
+            # Header: INDICATOR | SCORE | RAW VALUE | CONFIDENCE
             html += f"""
                 <tr>
                     <td class="indicator-label">{metric_name}</td>
@@ -238,7 +345,167 @@ def render_optimizer_section(history: List[Dict[str, Any]], metrics_map: Dict[st
         if 'previous_regime_verdict' not in st.session_state:
             st.session_state.previous_regime_verdict = None
         
-        if st.button("RUN WEIGHT OPTIMIZATION", use_container_width=True):
+        # Slide-to-Confirm Component for Backtest Execution
+        st.html("""
+            <style>
+            .slide-to-confirm-container {
+                width: 100%;
+                margin: 1rem 0;
+            }
+            
+            .slide-track {
+                position: relative;
+                width: 100%;
+                height: 60px;
+                background: rgba(31, 40, 51, 0.6);
+                border: 2px solid #45a29e;
+                border-radius: 30px;
+                overflow: hidden;
+                cursor: pointer;
+                user-select: none;
+            }
+            
+            .slide-background {
+                position: absolute;
+                left: 0;
+                top: 0;
+                height: 100%;
+                width: 0%;
+                background: linear-gradient(90deg, #4AF6C3 0%, #05D9E8 100%);
+                transition: width 0.3s ease-out;
+                border-radius: 30px;
+            }
+            
+            .slide-button {
+                position: absolute;
+                left: 4px;
+                top: 4px;
+                width: 52px;
+                height: 52px;
+                background: linear-gradient(135deg, #4AF6C3 0%, #05D9E8 100%);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.5rem;
+                box-shadow: 0 4px 12px rgba(74, 246, 195, 0.4);
+                transition: left 0.3s ease-out;
+                z-index: 10;
+            }
+            
+            .slide-text {
+                position: absolute;
+                width: 100%;
+                height: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-family: 'Inter', sans-serif;
+                font-weight: 600;
+                font-size: 0.9rem;
+                color: rgba(255, 255, 255, 0.8);
+                text-transform: uppercase;
+                letter-spacing: 0.1em;
+                pointer-events: none;
+                z-index: 5;
+            }
+            
+            .slide-track.confirmed .slide-background {
+                width: 100%;
+            }
+            
+            .slide-track.confirmed .slide-button {
+                left: calc(100% - 56px);
+            }
+            
+            .slide-track.confirmed .slide-text {
+                color: rgba(11, 12, 16, 0.9);
+            }
+            </style>
+            
+            <div class="slide-to-confirm-container">
+                <div class="slide-track" id="slideTrack">
+                    <div class="slide-background"></div>
+                    <div class="slide-button">▶</div>
+                    <div class="slide-text">SLIDE TO RUN OPTIMIZATION</div>
+                </div>
+            </div>
+            
+            <script>
+            (function() {
+                const track = document.getElementById('slideTrack');
+                const button = track.querySelector('.slide-button');
+                const background = track.querySelector('.slide-background');
+                const text = track.querySelector('.slide-text');
+                
+                let isDragging = false;
+                let startX = 0;
+                let currentX = 0;
+                const maxDistance = track.offsetWidth - 60;
+                
+                function handleStart(e) {
+                    isDragging = true;
+                    startX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+                    track.style.cursor = 'grabbing';
+                }
+                
+                function handleMove(e) {
+                    if (!isDragging) return;
+                    
+                    const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+                    currentX = Math.max(0, Math.min(maxDistance, clientX - startX));
+                    
+                    const percentage = (currentX / maxDistance) * 100;
+                    button.style.left = currentX + 4 + 'px';
+                    background.style.width = percentage + '%';
+                    
+                    // Change text opacity as user slides
+                    text.style.opacity = 1 - (percentage / 100);
+                }
+                
+                function handleEnd() {
+                    if (!isDragging) return;
+                    isDragging = false;
+                    track.style.cursor = 'pointer';
+                    
+                    // Check if slid past 80% threshold
+                    if (currentX > maxDistance * 0.8) {
+                        // Confirmed! Trigger optimization
+                        track.classList.add('confirmed');
+                        text.textContent = 'OPTIMIZATION STARTED';
+                        
+                        // Trigger Streamlit rerun with optimization flag
+                        setTimeout(() => {
+                            window.parent.postMessage({
+                                type: 'streamlit:setComponentValue',
+                                value: true
+                            }, '*');
+                        }, 300);
+                    } else {
+                        // Reset
+                        button.style.left = '4px';
+                        background.style.width = '0%';
+                        text.style.opacity = '1';
+                    }
+                    
+                    currentX = 0;
+                }
+                
+                // Mouse events
+                button.addEventListener('mousedown', handleStart);
+                document.addEventListener('mousemove', handleMove);
+                document.addEventListener('mouseup', handleEnd);
+                
+                // Touch events
+                button.addEventListener('touchstart', handleStart);
+                document.addEventListener('touchmove', handleMove);
+                document.addEventListener('touchend', handleEnd);
+            })();
+            </script>
+        """)
+        
+        # Check if slide-to-confirm was triggered (fallback to button for now)
+        if st.button("RUN WEIGHT OPTIMIZATION", use_container_width=True, key="backup_optimizer_button"):
             from ..backtesting.optimizer import BacktestOptimizer
             
             # Extract price for optimizer

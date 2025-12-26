@@ -56,7 +56,7 @@ def main():
     
     # Live Connection Beacon + Title
     st.markdown('<span class="live-beacon"></span>', unsafe_allow_html=True)
-    st.title("₿ BITCOIN REGIME INTELLIGENCE")
+    st.markdown("# ₿ BITCOIN REGIME INTELLIGENCE")
     st.markdown("---")
 
     sources_config = load_sources()
@@ -98,6 +98,58 @@ def main():
     
     # Get or create cached stream
     stream = get_market_stream(sources_config, days_hist)
+    
+    # System Status Indicator (monitors MarketDataStream health)
+    stream_stats = stream.get_stats()
+    is_healthy = stream_stats.get('running', False) and stream_stats.get('thread_alive', False)
+    status_color = "#4AF6C3" if is_healthy else "#FF433D"  # Finance Green / Bloomberg Red
+    status_text = "ACTIVE" if is_healthy else "CIRCUIT BREAKER"
+    
+    st.html(f"""
+        <style>
+        .system-status-container {{
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(11, 12, 16, 0.9);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            border: 1px solid {status_color};
+            backdrop-filter: blur(10px);
+        }}
+        
+        .status-indicator {{
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: {status_color};
+            box-shadow: 0 0 10px {status_color};
+            animation: pulse-status 2s ease-in-out infinite;
+        }}
+        
+        @keyframes pulse-status {{
+            0%, 100% {{ opacity: 1; }}
+            50% {{ opacity: 0.6; }}
+        }}
+        
+        .status-text {{
+            font-family: 'Inter', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: {status_color};
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }}
+        </style>
+        <div class="system-status-container">
+            <div class="status-indicator"></div>
+            <div class="status-text">{status_text}</div>
+        </div>
+    """)
     
     # Consumer: Read latest data from buffer
     if refresh or 'metrics_map' not in st.session_state:
