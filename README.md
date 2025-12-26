@@ -83,10 +83,12 @@ python tests/api_contract_test.py
 
 ## 🏗 Architecture
 - `src/fetchers/`: Modular async retrieval package (Base, On-Chain, Sentiment, etc.).
-- `src/persistence/`: SQLite-driven data persistence logic.
-- `src/analyzer.py`: The scoring engine and aggregation logic.
+- `src/persistence/`: SQLite-driven relational data persistence.
+- `src/streaming/`: High-frequency Producer-Consumer data ingestion thread.
+- `src/alerts/`: Proactive Telegram notification bridge.
 - `src/intelligence/`: ML Forecasting and Backtest Optimization suite.
-- `src/ui/`: Modular Streamlit dashboard components.
+- `src/ui/`: High-density Bento Box components (Charts, Command Palette, etc.).
+- `src/analyzer.py`: The scoring engine and strategy-based aggregation logic.
 - `config/thresholds.yaml`: Centralized configuration for bullish/bearish boundaries.
 
 ## ⚖️ License

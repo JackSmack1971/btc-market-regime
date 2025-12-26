@@ -87,51 +87,31 @@ __all__ = [
 
 **Target Architecture**:
 ```python
-# src/cache/cache_manager.py
-from functools import wraps
-import pickle
-from pathlib import Path
-from datetime import datetime, timedelta
-
-class CacheManager:
-    """Disk-based caching with TTL support."""
-    
-    def __init__(self, cache_dir: str = ".cache", ttl_minutes: int = 5):
-        self.cache_dir = Path(cache_dir)
-        self.cache_dir.mkdir(exist_ok=True)
-        self.ttl = timedelta(minutes=ttl_minutes)
+# src/persistence/db_manager.py
+class DBManager:
+    """ACID-compliant SQLite persistence."""
     
     def get(self, key: str) -> Optional[Any]:
-        cache_file = self.cache_dir / f"{key}.pkl"
-        if not cache_file.exists():
-            return None
-        
-        # Check TTL
-        mtime = datetime.fromtimestamp(cache_file.stat().st_mtime)
-        if datetime.now() - mtime > self.ttl:
-            cache_file.unlink()  # Expired
-            return None
-        
-        with open(cache_file, 'rb') as f:
-            return pickle.load(f)
+        # Sub-1ms retrieval from SQL index
+        # DESERIALIZE BLOB via pickle.loads
+        pass
     
     def set(self, key: str, value: Any):
-        cache_file = self.cache_dir / f"{key}.pkl"
-        with open(cache_file, 'wb') as f:
-            pickle.dump(value, f)
+        # SERIALIZE object to BLOB
+        # UPSERT into 'cache' table
+        pass
 
-# Integration with fetchers
+# Integration with fetchers (using db_manager Singleton)
 @cached(ttl_minutes=5)
-def fetch(self) -> MetricData:
-    cache_key = f"{self.metric_name}_{datetime.now().date()}"
-    cached = cache_manager.get(cache_key)
+def fetch(self, session: aiohttp.ClientSession) -> MetricData:
+    cache_key = f"{self.metric_name}_latest"
+    cached = db_manager.get(cache_key)
     if cached:
-        logger.info("Cache hit", metric=self.metric_name)
         return cached
     
-    # Normal fetch logic
-    data = self._fetch_from_api()
-    cache_manager.set(cache_key, data)
+    # Tier 1 retrieval logic
+    data = await self._fetch_primary(session)
+    db_manager.set(cache_key, data)
     return data
 ```
 

@@ -1,5 +1,5 @@
 # API Documentation & Metric Schema
-*Version 1.1 | Async-First Modular Context*
+*Version 1.1.0 | Async-First Modular Context*
 
 ## 1. Metric Definition Matrix
 | Metric | Code Key | Type | Confluence Weight |
@@ -36,7 +36,7 @@ Integrated via `src/fetchers/base.py`.
 The standardized output for external consumption.
 ```json
 {
-  "engine_version": "1.0.0",
+  "engine_version": "1.1.0",
   "timestamp": "2025-12-25T15:43:54Z",
   "score": 1.6,
   "label": "SIDEWAYS/TRANSITIONAL",
@@ -53,14 +53,16 @@ The standardized output for external consumption.
 }
 ```
 
-## 5. Logical Schemas
-Internal JSON structure for SQLite caching:
+## 5. Persistence Schema (SQLite)
+The system persists `MetricData` using **Pickle-to-BLOB** serialization in SQLite.
+- **Table**: `cache`
+- **Key**: `metric_name` (e.g., `fear_greed_index_latest`)
+- **Value**: Binary BLOB of the pickled MetricData object.
+
 ```json
 {
-  "metric_name": "fear_greed_index",
-  "value": 45.0,
-  "timestamp": "2025-12-25T15:05:00Z",
-  "source": "primary",
-  "is_fallback": false
+  "key": "fear_greed_index_latest",
+  "value": "<BINARY_BLOB>",
+  "timestamp": "2025-12-25T15:05:00Z"
 }
 ```

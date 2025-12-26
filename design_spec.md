@@ -55,38 +55,64 @@ async def fetch(self, session: aiohttp.ClientSession) -> MetricData:
         return MetricData(value=value, source="backup")
 ```
 
-### 2.3 Persistence Specification (SQLite)
-Legacy `.pkl` files are deprecated in favor of an ACID-compliant SQLite layer.
-- **Table**: `cache` (key TEXT PRIMARY KEY, value BLOB, timestamp DATETIME)
-- **Logic**: Objects are serialized via `pickle` and stored as BLOBs to preserve type fidelity for `MetricData` class instances.
+### 2.3 Persistence Specification (Relational)
+Legacy `.pkl` files are deprecated. The system utilizes an ACID-compliant **SQLite3** layer for high-integrity caching.
+- **Implementation**: `src/persistence/db_manager.py` (Singleton).
+- **Table**: `cache` (key TEXT PRIMARY KEY, value BLOB, timestamp DATETIME).
+- **Serialization**: Python objects (e.g. `MetricData`) are serialized via `pickle` and stored as **BLOBs** to maintain type fidelity across process restarts.
+- **Performance**: Sub-1ms retrieval for UI re-renders.
 
 ---
 
-## 3. Intelligence Suite
+## 3. Intelligence & Streaming Suite
 
-### 3.1 ML Regime Forecasting
+### 3.1 Market Data Streaming
+High-frequency ingestion via `src/streaming/market_data_stream.py`.
+- **Pattern**: Producer-Consumer (Background Async Thread).
+- **Conflation**: Uses `collections.deque(maxlen=1)` to deliver only the freshest data point to the UI, preventing refresh lag.
+
+### 3.2 ML Regime Forecasting
 Experimental 12-hour projections based on historical regime scores.
 - **Model**: Linear Regression / Polynomial features of recent total scores.
 - **Output**: `Projected Score` and `Sentiment Trend`.
 
-### 3.2 Backtest Optimizer
+### 3.3 Backtest Optimizer
 Bayesian optimization (Optuna) for indicator weight adjustment.
 - **Objective**: Maximize "Regime Predictive Accuracy" against historical price action.
-- **Parameters**: `fear_greed_weight`, `mvrv_weight`, etc.
 
 ---
 
-## 4. Project File Structure (Modular Monolith)
+## 4. Bento Box UI Design System
+The dashboard utilizes a high-density, **Bloomberg-grade** bento layout.
+
+### 4.1 Grid Scaffolding
+- **Density**: 1rem header padding and 4px column gaps.
+- **Structural Borders**: `#3E3E42` (Warm Grey) with 0.6 opacity glassmorphism.
+
+### 4.2 Responsive Priority Hiding
+Managed via `src/ui/viewport_detector.py` and CSS:
+- **Priority 1**: Core identity/price (Always visible).
+- **Priority 2**: Secondary metrics (Hidden < 600px).
+- **Priority 3**: Visual artifacts/sparklines (Hidden < 1440px).
+
+---
+
+## 5. Project File Structure (Modular Monolith)
 ```
 bitcoin-regime-analyzer/
 ├── src/
 │   ├── fetchers/            # Async fetcher package
 │   │   ├── base.py          # Abstract BaseFetcher
-│   │   ├── sentiment.py     # FearGreedFetcher
 │   │   └── [Specialized...]
 │   │
 │   ├── persistence/         # SQLite persistence logic
 │   │   └── db_manager.py    # CRUD for cache table
+│   │
+│   ├── streaming/           # Real-time data pipeline
+│   │   └── market_data_stream.py 
+│   │
+│   ├── alerts/              # Notification channels
+│   │   └── telegram.py      # Async Telegram bridge
 │   │
 │   ├── intelligence/        # ML & Optimizer suite
 │   │   ├── forecaster.py
@@ -94,7 +120,9 @@ bitcoin-regime-analyzer/
 │   │
 │   ├── ui/                  # Dashboard components
 │   │   ├── dashboard.py     # Main layout logic
-│   │   └── charts.py        # Plotly implementations
+│   │   ├── styles.py        # Bento Box CSS
+│   │   ├── viewport_detector.py # JS Bridge
+│   │   └── command_palette.py # Cmd+K Nav
 │   │
 │   ├── analyzer.py          # Scoring engine
 │   ├── models.py            # Data contracts
