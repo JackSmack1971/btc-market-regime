@@ -240,10 +240,10 @@ def render_component_breakdown(breakdown: List[Dict[str, Any]]):
         <table class="indicators-table">
             <thead>
                 <tr>
-                    <th>INDICATOR</th>
-                    <th>SCORE</th>
-                    <th>RAW VALUE</th>
-                    <th>CONFIDENCE</th>
+                    <th class="col-priority-1">INDICATOR</th>
+                    <th class="col-priority-1">SCORE</th>
+                    <th class="col-priority-2">RAW VALUE</th>
+                    <th class="col-priority-3">CONFIDENCE</th>
                 </tr>
             </thead>
             <tbody>
@@ -292,10 +292,10 @@ def render_component_breakdown(breakdown: List[Dict[str, Any]]):
             # Header: INDICATOR | SCORE | RAW VALUE | CONFIDENCE
             html += f"""
                 <tr class="{priority_class}">
-                    <td class="indicator-label">{metric_name}</td>
-                    <td class="indicator-value {momentum_class}">{momentum_symbol} {score:.2f}</td>
-                    <td class="indicator-value">{raw_value_str}</td>
-                    <td class="indicator-value {confidence_class}">{confidence}</td>
+                    <td class="indicator-label col-priority-1">{metric_name}</td>
+                    <td class="indicator-value {momentum_class} col-priority-1">{momentum_symbol} {score:.2f}</td>
+                    <td class="indicator-value col-priority-2">{raw_value_str}</td>
+                    <td class="indicator-value {confidence_class} col-priority-3">{confidence}</td>
                 </tr>
             """
         

@@ -192,19 +192,26 @@ def inject_bloomberg_styles():
             display: table-cell;
         }
         
-        /* Tablet: Hide Priority 3 */
+        /* Large Desktop: Show all (1440px+) */
+        
+        /* Narrow Desktop/Tablet: Hide Priority 3 (Confidence) */
         @media (max-width: 1440px) {
             .col-priority-3 {
-                display: none;
+                display: none !important;
             }
         }
         
-        /* Mobile: Hide Priority 2 and 3 */
-        @media (max-width: 600px) {
+        /* Mobile/Narrow Tablet: Hide Priority 2 (Raw Value, Secondary Indicators) */
+        @media (max-width: 1024px) {
             .col-priority-2,
             .col-priority-3 {
-                display: none;
+                display: none !important;
             }
+        }
+        
+        /* Ultra-Mobile: Core Execution only (< 600px) */
+        @media (max-width: 600px) {
+            /* Handled by col-priority logic above */
         }
         
         /* ========== FLASH EFFECTS ON UPDATES ========== */
